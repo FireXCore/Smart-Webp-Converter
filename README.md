@@ -20,6 +20,8 @@ To use this plugin, the **gd.php** extension must be enabled on your server. Thi
 5. 🎉 Enjoy faster image loading and improved site performance!
 
 For more guidance and support, please visit [this link](https://firexcore.com/blog/webp-image-optimization-for-wordpress/).
+To install the plugin directly, visit the [WebP Image Converter plugin page on WordPress](https://wordpress.org/plugins/smart-webp-converter/).
+
 
 ## 📄 License
 This plugin is open-source and distributed under the [MIT License](LICENSE).
