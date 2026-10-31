@@ -35,6 +35,10 @@ final class FireXCore_WebP_Converter {
         add_filter( 'wp_get_attachment_image', array( $this, 'attachment_picture' ), 20, 5 );
         add_filter( 'render_block', array( $this, 'render_image_block' ), 20, 2 );
         add_filter( 'wp_get_attachment_image_attributes', array( $this, 'image_attributes' ), 20, 3 );
+        add_filter( 'attachment_fields_to_edit', array( $this, 'attachment_fields' ), 20, 2 );
+        add_filter( 'manage_media_columns', array( $this, 'media_columns' ) );
+        add_action( 'manage_media_custom_column', array( $this, 'media_column_content' ), 10, 2 );
+        add_action( 'admin_post_firexcore_webp_generate_one', array( $this, 'generate_existing_attachment' ) );
     }
 
     public function activate() {
@@ -393,6 +397,139 @@ final class FireXCore_WebP_Converter {
         return $attr;
     }
 
+    /**
+     * Reports what actually exists on disk; the Media Library MIME remains PNG/JPEG
+     * when the safe sidecar mode is selected. No conversion happens on page load.
+     */
+    private function conversion_status( $attachment_id ) {
+        $mime = get_post_mime_type( $attachment_id );
+        if ( 'image/webp' === $mime ) {
+            return array( 'state' => 'native', 'label' => __( 'WebP original', 'smart-webp-converter' ) );
+        }
+        if ( ! in_array( $mime, array( 'image/png', 'image/jpeg', 'image/gif' ), true ) ) {
+            return array( 'state' => 'unsupported', 'label' => __( 'Not a supported source image', 'smart-webp-converter' ) );
+        }
+        $path = get_attached_file( $attachment_id );
+        if ( ! is_string( $path ) || ! is_file( $path ) ) {
+            return array( 'state' => 'missing', 'label' => __( 'Original file unavailable', 'smart-webp-converter' ) );
+        }
+        $target = preg_replace( '/\\.(?:jpe?g|png|gif)$/i', '.webp', $path );
+        $sidecars = get_post_meta( $attachment_id, '_firexcore_webp_sidecars', true );
+        if ( $target !== $path && is_array( $sidecars ) &&
+             in_array( wp_normalize_path( $target ), $sidecars, true ) &&
+             $this->valid_webp( $target ) ) {
+            $url = $this->webp_url( wp_get_attachment_url( $attachment_id ), $attachment_id );
+            return array(
+                'state' => 'ready',
+                'label' => __( 'WebP sidecar ready; original retained', 'smart-webp-converter' ),
+                'url' => $url,
+                'bytes' => filesize( $target ),
+            );
+        }
+        return array( 'state' => 'pending', 'label' => __( 'No WebP sidecar detected', 'smart-webp-converter' ) );
+    }
+
+    /**
+     * Media attachment details use the built-in compatibility fields renderer.
+     */
+    public function attachment_fields( $fields, $post ) {
+        if ( ! current_user_can( 'edit_post', $post->ID ) ) {
+            return $fields;
+        }
+        $status = $this->conversion_status( $post->ID );
+        $text = '<strong>' . esc_html( $status['label'] ) . '</strong>';
+        if ( 'ready' === $status['state'] && ! empty( $status['url'] ) ) {
+            $text .= ' <a href="' . esc_url( $status['url'] ) . '" target="_blank" rel="noopener noreferrer">' .
+                esc_html__( 'View WebP file', 'smart-webp-converter' ) . '</a>';
+        }
+        if ( in_array( $status['state'], array( 'ready', 'pending' ), true ) &&
+             current_user_can( 'manage_options' ) ) {
+            $text .= ' <a href="' . esc_url( add_query_arg(
+                array( 'page' => 'smart-webp-converter', 'attachment_id' => $post->ID ),
+                admin_url( 'admin.php' )
+            ) ) . '">' . esc_html__( 'Manage conversion', 'smart-webp-converter' ) . '</a>';
+        }
+        $fields['firexcore_webp_status'] = array(
+            'label' => __( 'WebP conversion', 'smart-webp-converter' ),
+            'input' => 'html',
+            'html' => '<div class="firexcore-webp-status">' . $text . '</div>',
+            'helps' => __( 'In safe mode the Media Library keeps the original PNG/JPEG file; the WebP is separate. Favicons and raw URLs are not automatically rewritten.', 'smart-webp-converter' ),
+        );
+        return $fields;
+    }
+
+    public function media_columns( $columns ) {
+        $columns['firexcore_webp'] = __( 'WebP status', 'smart-webp-converter' );
+        return $columns;
+    }
+
+    public function media_column_content( $column, $attachment_id ) {
+        if ( 'firexcore_webp' !== $column ) {
+            return;
+        }
+        $status = $this->conversion_status( $attachment_id );
+        echo esc_html( $status['label'] );
+    }
+
+    /**
+     * Explicit, nonce-protected *non-destructive* regeneration of WebP sidecars.
+     * This action never changes the attachment path or MIME type.
+     */
+    public function generate_existing_attachment() {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_die( esc_html__( 'Insufficient permissions.', 'smart-webp-converter' ), '', array( 'response' => 403 ) );
+        }
+        // Authenticate the mutation before accepting any request fields.
+        check_admin_referer( 'firexcore_webp_generate_one' );
+        $attachment_id = isset( $_POST['attachment_id'] ) ? absint( wp_unslash( $_POST['attachment_id'] ) ) : 0;
+        if ( ! $attachment_id || 'attachment' !== get_post_type( $attachment_id ) ||
+             ! current_user_can( 'edit_post', $attachment_id ) ) {
+            wp_die( esc_html__( 'Invalid media attachment.', 'smart-webp-converter' ), '', array( 'response' => 400 ) );
+        }
+        $current = $this->conversion_status( $attachment_id );
+        if ( 'pending' === $current['state'] ) {
+            $metadata = wp_get_attachment_metadata( $attachment_id );
+            $this->attachment_metadata( is_array( $metadata ) ? $metadata : array(), $attachment_id, 'update' );
+        }
+        $result = $this->conversion_status( $attachment_id );
+        $message = in_array( $result['state'], array( 'ready', 'native' ), true ) ? 'converted' : 'unavailable';
+        wp_safe_redirect( add_query_arg(
+            array( 'page' => 'smart-webp-converter', 'attachment_id' => $attachment_id, 'webp_result' => $message ),
+            admin_url( 'admin.php' )
+        ) );
+        exit;
+    }
+
+    private function dashboard_attachment( $attachment_id ) {
+        if ( ! $attachment_id || 'attachment' !== get_post_type( $attachment_id ) ||
+             ! current_user_can( 'edit_post', $attachment_id ) ) {
+            return;
+        }
+        $status = $this->conversion_status( $attachment_id );
+        echo '<div class="card" style="max-width:800px"><h2>' .
+            esc_html__( 'Media conversion status', 'smart-webp-converter' ) . '</h2>';
+        echo '<p><strong>' . esc_html( get_the_title( $attachment_id ) ) . '</strong></p>';
+        echo '<p>' . esc_html( $status['label'] ) . '</p>';
+        if ( 'ready' === $status['state'] && ! empty( $status['url'] ) ) {
+            echo '<p><a href="' . esc_url( $status['url'] ) . '" target="_blank" rel="noopener noreferrer">' .
+                esc_html__( 'View generated WebP', 'smart-webp-converter' ) . '</a> (' .
+                esc_html( size_format( $status['bytes'] ) ) . ')</p>';
+        }
+        if ( isset( $_GET['webp_result'] ) && 'unavailable' === sanitize_key( wp_unslash( $_GET['webp_result'] ) ) ) {
+            echo '<p class="notice notice-warning">' .
+                esc_html__( 'Conversion was not completed. Check server WebP support, image size, or file-name conflicts. The original remains unchanged.', 'smart-webp-converter' ) . '</p>';
+        }
+        if ( 'pending' === $status['state'] ) {
+            echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
+            echo '<input type="hidden" name="action" value="firexcore_webp_generate_one">';
+            echo '<input type="hidden" name="attachment_id" value="' . esc_attr( $attachment_id ) . '">';
+            wp_nonce_field( 'firexcore_webp_generate_one' );
+            submit_button( __( 'Generate WebP sidecar now (keep original)', 'smart-webp-converter' ), 'secondary', 'submit', false );
+            echo '</form>';
+        }
+        echo '</div>';
+    }
+
     public function register_settings() {
         register_setting( 'firexcore_webp_options', 'firexcore_webp_quality', array(
             'type' => 'integer', 'sanitize_callback' => array( $this, 'sanitize_quality' ),
@@ -467,6 +604,10 @@ final class FireXCore_WebP_Converter {
         $ratio = $original > 0 ? min( 100, round( 100 * $webp / $original ) ) : 0;
         echo '<div class="wrap"><h1>' . esc_html__( 'Smart WebP Converter', 'smart-webp-converter' ) . '</h1>';
         echo '<p>' . esc_html__( 'Statistics show potential transfer savings, not actual disk savings when originals are kept.', 'smart-webp-converter' ) . '</p>';
+        $attachment_id = isset( $_GET['attachment_id'] ) ? absint( wp_unslash( $_GET['attachment_id'] ) ) : 0;
+        if ( $attachment_id ) {
+            $this->dashboard_attachment( $attachment_id );
+        }
         echo '<div class="card" style="max-width:800px"><h2>' . esc_html__( 'Conversion statistics', 'smart-webp-converter' ) . '</h2>';
         echo '<p>' . esc_html__( 'Converted attachments', 'smart-webp-converter' ) . ': <strong>' . esc_html( $totals['converted'] ) . '</strong></p>';
         echo '<p>' . esc_html__( 'Original bytes', 'smart-webp-converter' ) . ': ' . esc_html( size_format( $original ) ) . '</p>';
@@ -488,7 +629,8 @@ final class FireXCore_WebP_Converter {
             'seo_optimization' => __( 'Use meaningful attachment titles for empty alt text', 'smart-webp-converter' ),
         );
         echo '<div class="wrap"><h1>' . esc_html__( 'Smart WebP Converter Settings', 'smart-webp-converter' ) . '</h1>';
-        echo '<p>' . esc_html__( 'Existing media is not modified. Test replacement on a staging site and back up uploads first.', 'smart-webp-converter' ) . '</p>';
+        echo '<p>' . esc_html__( 'With Replace Original disabled, the media library keeps your PNG/JPEG and the plugin creates a separate .webp file. WordPress image elements may serve WebP with an original fallback. Site icons, direct file URLs and CSS background images are not rewritten.', 'smart-webp-converter' ) . '</p>';
+        echo '<p>' . esc_html__( 'Replace Original applies only to new uploads, removes the source file after conversion, and must be tested with a backup first. To check a previously uploaded image, use its WebP conversion link in Media Library.', 'smart-webp-converter' ) . '</p>';
         echo '<form action="options.php" method="post">';
         settings_fields( 'firexcore_webp_options' );
         echo '<table class="form-table"><tr><th><label for="swc-quality">' .

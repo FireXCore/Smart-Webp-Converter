@@ -70,7 +70,7 @@ jobs:
           cp -a smart-webp-converter "$RUNNER_TEMP/swc-wordpress/wp-content/plugins/"
           php wp-cli.phar plugin activate smart-webp-converter --path="$RUNNER_TEMP/swc-wordpress"
       - name: Real WordPress image integration
-        run: php wp-cli.phar eval-file "$GITHUB_WORKSPACE/tests/wp-integration.php" --path="$RUNNER_TEMP/swc-wordpress"
+        run: php wp-cli.phar eval-file "$GITHUB_WORKSPACE/tests/wp-integration.php" --path="$RUNNER_TEMP/swc-wordpress" --user=admin
       - name: Upgrade existing WordPress.org 1.1.0 installation
         if: matrix.wp == 'latest'
         run: |

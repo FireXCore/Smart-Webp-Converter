@@ -25,9 +25,12 @@ Other features:
 * Conversion dashboard using locally rendered HTML/CSS (no remote scripts).
 * Existing attachment alt text preserved; only meaningful editorial titles fill empty alt text.
 * Existing database statistics and `firexcore_webp_*` settings retained from version 1.1.0.
+* Visible WebP conversion status in Media Library and single-image sidecar regeneration for existing attachments.
 
 Limitations and safeguards:
-* New uploads are processed. Explicit regeneration of attachment metadata can create sidecars for existing images; no automatic bulk pass is run.
+* New uploads are processed automatically. In Media Library, view WebP status and regenerate a missing sidecar for an existing image without replacing its original; no automatic bulk pass is run.
+* A source PNG/JPEG remains PNG/JPEG in Media Library while Replace Original is OFF. The additional WebP file is reported separately.
+* Site icons (including apple-touch-icon PNG), CSS backgrounds and raw URLs are not automatically rewritten.
 * Animated GIFs are skipped to preserve animation. GIFs require Imagick even when single-frame.
 * Large images above 40 million pixels are skipped.
 * Raw HTML image URLs and CSS background images are not automatically rewritten.
@@ -43,7 +46,13 @@ Limitations and safeguards:
 1. Install the plugin as a directory named smart-webp-converter.
 2. Activate it and open Smart WebP Converter > Settings.
 3. Keep Replace Original disabled unless the site has been backed up and tested.
-4. Upload a new JPEG or PNG, then verify the WebP file and attachment output.
+4. Upload a new JPEG or PNG. The Media Library retains its original type when Replace Original is off; use WebP Status to verify the additional .webp file.
+5. For an existing image, open Media Library > attachment details > Manage conversion > Generate WebP sidecar now.
+
+== Screenshots ==
+
+1. Smart WebP Converter settings: safe mode preserves the original PNG/JPEG and makes WebP files alongside it.
+2. WordPress Media Library attachment details: the PNG remains unchanged in safe mode. Use the conversion status link to verify the separate WebP file.
 
 == Upgrade Notice ==
 
@@ -63,3 +72,4 @@ Requires PHP 7.4+. Preserves existing options, media and statistics. No legacy w
 * Correct checkbox persistence, settings sanitization, and release documentation.
 * Preserve existing 1.1.0 option names and conversion statistics; new uploads require PHP 7.4+.
 * Remove historical remote Chart.js and smart suggestions UI; image conversion and basic statistics remain.
+* Show actual conversion status in Media Library and offer nonce-protected generation of sidecars for existing media without destructive replacement.

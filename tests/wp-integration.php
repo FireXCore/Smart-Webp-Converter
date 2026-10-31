@@ -63,6 +63,23 @@ swc_integration_assert( strpos( $html, '<picture>' ) !== false, 'WordPress attac
 swc_integration_assert( strpos( $html, 'image/webp' ) !== false, 'WebP source included' );
 swc_integration_assert( strpos( $html, '.png' ) !== false, 'original PNG fallback included' );
 
+// WordPress media modal should explain the PNG MIME and report a real WebP sidecar.
+$fields = apply_filters( 'attachment_fields_to_edit', array(), get_post( $id ) );
+swc_integration_assert( ! empty( $fields['firexcore_webp_status']['html'] ), 'WebP status field is available to the Media Library modal' );
+swc_integration_assert( false !== strpos( $fields['firexcore_webp_status']['html'], 'WebP sidecar ready' ), 'Media Library reports generated WebP correctly' );
+$columns = apply_filters( 'manage_media_columns', array( 'title' => 'File' ) );
+swc_integration_assert( isset( $columns['firexcore_webp'] ), 'Media Library has a WebP status column' );
+
+// Simulate an older attachment with no sidecar, then explicitly regenerate it without replacing PNG.
+wp_delete_file( $sidecar );
+delete_post_meta( $id, '_firexcore_webp_sidecars' );
+$unconverted = apply_filters( 'attachment_fields_to_edit', array(), get_post( $id ) );
+swc_integration_assert( false !== strpos( $unconverted['firexcore_webp_status']['html'], 'No WebP sidecar detected' ), 'Missing WebP is not falsely reported as ready' );
+apply_filters( 'wp_generate_attachment_metadata', wp_get_attachment_metadata( $id ), $id, 'update' );
+swc_integration_assert( is_file( $sidecar ) && is_file( $original ), 'Existing PNG safely regenerates its WebP sidecar' );
+$rechecked = apply_filters( 'attachment_fields_to_edit', array(), get_post( $id ) );
+swc_integration_assert( false !== strpos( $rechecked['firexcore_webp_status']['html'], 'WebP sidecar ready' ), 'Regenerated WebP is visible in Media Library status' );
+
 update_option( 'firexcore_webp_replace_original', true );
 $replacement_id = swc_integration_upload( 'test-replace-original.png' );
 $newpath = get_attached_file( $replacement_id );
