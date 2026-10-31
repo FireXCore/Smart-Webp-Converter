@@ -26,7 +26,7 @@ The editable WordPress plugin source is in [smart-webp-converter/](smart-webp-co
 3. Leave **Replace Original** disabled until a real staging-site test and backup have succeeded.
 4. Verify JPEG/PNG uploads, thumbnails, front-end `<picture>` markup, and image URLs.
 
-CI checks PHP 7.4, 8.2, and 8.4. GitHub Actions packages an installable ZIP as a downloadable artifact. These are isolated smoke tests; WordPress/WooCommerce end-to-end verification is still pending.
+CI checks PHP 7.4, 8.2, and 8.4. WordPress integration tests passed on 6.7.10 and 7.1.4 with real media uploads. WooCommerce, CDN and production-like staging validation remain pending. GitHub Actions packages an installable ZIP artifact.
 
 ## Package locally
 
@@ -36,7 +36,7 @@ zip -r smart-webp-converter-1.2.0.zip smart-webp-converter/
 
 ## Limitations
 
-Animated GIFs are not converted. Raw HTML image URLs, CSS background images, and unknown CDN URL rewrites are not touched. Legacy files in `webp-temp/` are deliberately left untouched because older versions may have registered them as original attachment files. Existing attachments are not migrated or bulk-converted.
+Animated GIFs are not converted. Raw HTML image URLs, CSS background images, and unknown CDN URL rewrites are not touched. Legacy files in `webp-temp/` are deliberately left untouched because older versions may have registered them as original attachment files. Existing attachments are not migrated or bulk-converted on activation. Explicitly regenerating attachment metadata can create new sidecars.
 
 Full detailed behavior is in [the plugin readme](smart-webp-converter/readme.txt). Security and compatibility findings are documented in [docs/SECURITY-AUDIT.md](docs/SECURITY-AUDIT.md).
 
