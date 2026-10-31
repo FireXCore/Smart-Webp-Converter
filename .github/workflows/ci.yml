@@ -1,0 +1,46 @@
+name: WordPress plugin checks and package
+
+on:
+  push:
+    branches: [main, "audit/**"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  php:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ['7.4', '8.2', '8.4']
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: gd, imagick, mbstring
+          coverage: none
+      - name: PHP lint
+        run: |
+          find smart-webp-converter tests -name '*.php' -print0 | xargs -0 -n 1 php -l
+      - name: Smoke tests
+        run: php tests/smoke.php
+
+  package:
+    needs: php
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build installable plugin ZIP
+        run: |
+          zip -q -r smart-webp-converter-1.2.0.zip smart-webp-converter
+          unzip -l smart-webp-converter-1.2.0.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: smart-webp-converter-1.2.0
+          path: smart-webp-converter-1.2.0.zip
+          if-no-files-found: error
