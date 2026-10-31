@@ -1,29 +1,45 @@
-# 🌟 WebP Image Converter Plugin for WordPress 🌟
+# Smart WebP Converter for WordPress
 
-**WebP Image Converter** is a powerful WordPress plugin that automatically converts images uploaded to the media library into the WebP format. This plugin helps optimize your site’s images by reducing their file size without sacrificing quality, leading to faster loading times and improved SEO performance.
+Official plugin page: https://wordpress.org/plugins/smart-webp-converter/
 
-## 🚀 Key Features:
-- ⚡ Automatic conversion of images to WebP format for faster load times.
-- 🎯 Adjustable image quality settings to balance between performance and visual quality.
-- 📂 Supports bulk conversion of existing images in your media library.
-- 🔧 Seamless integration with WordPress, making the optimization process fully automated.
-- 🌍 Compatible with modern browsers that support WebP while preserving fallback for older browsers.
+## Source and releases
 
-## ⚠️ Important Requirement:
-To use this plugin, the **gd.php** extension must be enabled on your server. This extension is essential for converting images to the WebP format.
+The editable WordPress plugin source is in [smart-webp-converter/](smart-webp-converter/). The earlier repository contained only a binary ZIP; the new source directory is authoritative for upcoming releases.
 
-## 🛠️ Installation:
-1. Ensure the **gd.php** extension is enabled on your server.
-2. Download the plugin and upload it to your WordPress site.
-3. Activate the plugin through the ‘Plugins’ menu in WordPress.
-4. Configure the image quality settings in the plugin's settings page.
-5. 🎉 Enjoy faster image loading and improved site performance!
+**Development version:** 1.2.0 (not yet published to WordPress.org).
 
-For more guidance and support, please visit [this link](https://firexcore.com/blog/webp-image-optimization-for-wordpress/).
-To install the plugin directly, visit the [WebP Image Converter plugin page on WordPress](https://wordpress.org/plugins/smart-webp-converter/).
+**Current WordPress.org version:** 1.1.0. Updating this GitHub repository does **not** publish an update to the WordPress.org plugin directory. A separately reviewed WordPress SVN tag/release is required.
 
+## What changed in 1.2.0
 
-## 📄 License
-This plugin is open-source and distributed under the [MIT License](LICENSE).
+- Safe replacement before WordPress registers a new attachment, keeping media metadata and thumbnail generation consistent.
+- Default non-destructive mode retains originals and creates permanent WebP files beside original images and generated thumbnails.
+- Attachment images and `core/image` blocks get a `<picture>` WebP source with the original as a fallback.
+- Avoids animated-GIF flattening, accidental image deletion on conversion failures, overwrite/collision errors, duplicate statistics, and false lossless claims.
+- Existing settings keys and conversion-statistics table are preserved.
+- No remote JavaScript is loaded. No repeated costly table creation or full WooCommerce product enumeration on ordinary requests.
 
+## Install and test
 
+1. Use a ZIP containing the **smart-webp-converter** directory with `smart-webp-converter.php` and `readme.txt` at its root.
+2. Upload in WordPress Plugins > Add New > Upload Plugin.
+3. Leave **Replace Original** disabled until a real staging-site test and backup have succeeded.
+4. Verify JPEG/PNG uploads, thumbnails, front-end `<picture>` markup, and image URLs.
+
+CI checks PHP 7.4, 8.2, and 8.4. GitHub Actions packages an installable ZIP as a downloadable artifact. These are isolated smoke tests; WordPress/WooCommerce end-to-end verification is still pending.
+
+## Package locally
+
+```sh
+zip -r smart-webp-converter-1.2.0.zip smart-webp-converter/
+```
+
+## Limitations
+
+Animated GIFs are not converted. Raw HTML image URLs, CSS background images, and unknown CDN URL rewrites are not touched. Legacy files in `webp-temp/` are deliberately left untouched because older versions may have registered them as original attachment files. Existing attachments are not migrated or bulk-converted.
+
+Full detailed behavior is in [the plugin readme](smart-webp-converter/readme.txt). Security and compatibility findings are documented in [docs/SECURITY-AUDIT.md](docs/SECURITY-AUDIT.md).
+
+## Licensing
+
+The published WordPress plugin declares GPL v2 or later. The historical repository contains an MIT `LICENSE` file; license reconciliation for a public packaged release is a separate maintainer/legal review item, not an implicit relicensing through this update.
