@@ -217,9 +217,14 @@ final class FireXCore_WebP_Converter {
         $mime = get_post_mime_type( $attachment_id );
         $normalized = wp_normalize_path( $path );
         if ( 'image/webp' === $mime ) {
-            if ( isset( $this->replaced_uploads[ $normalized ] ) ) {
-                $this->record_stats( $attachment_id, $this->replaced_uploads[ $normalized ], filesize( $path ) );
-                unset( $this->replaced_uploads[ $normalized ] );
+            $pending_path = $normalized;
+            if ( ! isset( $this->replaced_uploads[ $pending_path ] ) && ! empty( $metadata['original_image'] ) ) {
+                // WordPress may have generated a -scaled file before this filter runs.
+                $pending_path = wp_normalize_path( dirname( $path ) . '/' . wp_basename( $metadata['original_image'] ) );
+            }
+            if ( isset( $this->replaced_uploads[ $pending_path ] ) ) {
+                $this->record_stats( $attachment_id, $this->replaced_uploads[ $pending_path ], filesize( $path ) );
+                unset( $this->replaced_uploads[ $pending_path ] );
             }
             return $metadata;
         }
@@ -230,10 +235,17 @@ final class FireXCore_WebP_Converter {
         if ( $target === $path ) {
             return $metadata;
         }
+        $sidecars = get_post_meta( $attachment_id, '_firexcore_webp_sidecars', true );
+        $sidecars = is_array( $sidecars ) ? $sidecars : array();
+        $main_key = wp_normalize_path( $target );
         if ( ! $this->valid_webp( $target ) ) {
+            // An unrelated file at the predicted path must never be overwritten or served.
             if ( file_exists( $target ) || ! $this->convert( $path, $target, $mime ) ) {
                 return $metadata;
             }
+            $sidecars[] = $main_key;
+        } elseif ( ! in_array( $main_key, $sidecars, true ) ) {
+            return $metadata;
         }
 
         // Core creates thumbnails before this filter; provide matching WebP sidecars.
@@ -244,11 +256,20 @@ final class FireXCore_WebP_Converter {
                 }
                 $original = dirname( $path ) . '/' . wp_basename( $size['file'] );
                 $output = preg_replace( '/\.(?:jpe?g|png|gif)$/i', '.webp', $original );
-                if ( $output !== $original && ! file_exists( $output ) ) {
-                    $this->convert( $original, $output, $this->mime_for_path( $original ) );
+                if ( $output === $original ) {
+                    continue;
+                }
+                $key = wp_normalize_path( $output );
+                if ( in_array( $key, $sidecars, true ) && $this->valid_webp( $output ) ) {
+                    continue;
+                }
+                if ( ! file_exists( $output ) &&
+                     $this->convert( $original, $output, $this->mime_for_path( $original ) ) ) {
+                    $sidecars[] = $key;
                 }
             }
         }
+        update_post_meta( $attachment_id, '_firexcore_webp_sidecars', array_values( array_unique( $sidecars ) ) );
         $this->record_stats( $attachment_id, filesize( $path ), filesize( $target ) );
         $this->maybe_set_alt( $attachment_id );
         return $metadata;
@@ -286,7 +307,7 @@ final class FireXCore_WebP_Converter {
         }
     }
 
-    private function webp_url( $url ) {
+    private function webp_url( $url, $attachment_id ) {
         $uploads = wp_get_upload_dir();
         if ( ! empty( $uploads['error'] ) || empty( $uploads['baseurl'] ) || empty( $uploads['basedir'] ) ) {
             return false;
@@ -303,7 +324,10 @@ final class FireXCore_WebP_Converter {
         }
         $target = preg_replace( '/\.(?:jpe?g|png|gif)$/i', '.webp',
             trailingslashit( $uploads['basedir'] ) . $relative );
-        if ( ! $this->valid_webp( $target ) ) {
+        $sidecars = get_post_meta( $attachment_id, '_firexcore_webp_sidecars', true );
+        if ( ! is_array( $sidecars ) ||
+             ! in_array( wp_normalize_path( $target ), $sidecars, true ) ||
+             ! $this->valid_webp( $target ) ) {
             return false;
         }
         return preg_replace( '/\.(?:jpe?g|png|gif)(?=$|\?)/i', '.webp', $url );
@@ -323,7 +347,7 @@ final class FireXCore_WebP_Converter {
             return $html;
         }
         $img = $match[0];
-        $src = $this->webp_url( $this->html_attribute( $img, 'src' ) );
+        $src = $this->webp_url( $this->html_attribute( $img, 'src' ), $attachment_id );
         if ( ! $src ) {
             return $html;
         }
@@ -332,7 +356,7 @@ final class FireXCore_WebP_Converter {
         if ( $srcset ) {
             foreach ( explode( ',', $srcset ) as $candidate ) {
                 if ( preg_match( '/^\s*(\S+)\s+([0-9]+(?:w|x))\s*$/', $candidate, $parts ) ) {
-                    $mapped = $this->webp_url( $parts[1] );
+                    $mapped = $this->webp_url( $parts[1], $attachment_id );
                     if ( $mapped ) {
                         $candidates[] = esc_url( $mapped ) . ' ' . $parts[2];
                     }
