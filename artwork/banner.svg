@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1544" height="500" viewBox="0 0 1544 500">
+<defs>
+ <linearGradient id="bg" x2="1" y2="1"><stop stop-color="#0d131d"/><stop offset="1" stop-color="#171e28"/></linearGradient>
+ <linearGradient id="accent" x2="1" y2="1"><stop stop-color="#ffa74a"/><stop offset="1" stop-color="#fb6612"/></linearGradient>
+ <pattern id="grid" width="44" height="44" patternUnits="userSpaceOnUse"><path d="M0 44 44 0" stroke="#65717c" stroke-opacity=".10" stroke-width="2"/></pattern>
+</defs>
+<rect width="1544" height="500" fill="url(#bg)"/>
+<rect width="1544" height="500" fill="url(#grid)"/>
+<path d="M1220 500 1544 100v400Z" fill="#ef6812" opacity=".13"/>
+<path d="M1340 0h140L1060 500h-140Z" fill="#f17d1b" opacity=".10"/>
+<rect x="55" y="64" width="9" height="72" rx="4" fill="url(#accent)"/>
+<text x="87" y="122" font-family="DejaVu Sans,Arial,sans-serif" font-size="59" font-weight="800" fill="#ffffff">Smart</text>
+<text x="307" y="122" font-family="DejaVu Sans,Arial,sans-serif" font-size="59" font-weight="800" fill="#ff862c">WebP Converter</text>
+<text x="88" y="179" font-family="DejaVu Sans,Arial,sans-serif" font-size="25" fill="#ced8e4">Safe image optimization for WordPress</text>
+<text x="88" y="217" font-family="DejaVu Sans,Arial,sans-serif" font-size="22" fill="#aabbd0">Convert new uploads with original-preserving sidecars.</text>
+<g font-family="DejaVu Sans,Arial,sans-serif" font-size="23" fill="#ebf0f6">
+  <circle cx="111" cy="292" r="25" fill="#f97316"/><path d="m100 292 8 8 17-20" fill="none" stroke="#101820" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="152" y="301">Originals kept by default</text>
+  <circle cx="111" cy="359" r="25" fill="#f97316"/><path d="M99 350h25m-25 10h25m-25 10h15" stroke="#101820" stroke-width="5" stroke-linecap="round"/>
+  <text x="152" y="367">Explicit replacement option</text>
+</g>
+<rect x="88" y="418" width="800" height="50" rx="15" fill="#223249" stroke="#3e5b7c"/>
+<text x="109" y="449" font-family="DejaVu Sans,Arial,sans-serif" font-size="20" fill="#e7f0ff">Keep PNG/JPG files in safe mode. Serve WebP when supported.</text>
+<g transform="translate(1040 55)">
+ <rect width="360" height="370" rx="30" fill="#151e29" stroke="#e87924" stroke-width="5"/>
+ <rect x="48" y="60" width="190" height="165" rx="19" fill="#243344" stroke="#fa8a27" stroke-width="9"/>
+ <circle cx="190" cy="100" r="19" fill="#fa8a27"/>
+ <path d="m58 206 63-75 52 50 28-32 29 57" fill="#8095a7"/>
+ <rect x="162" y="164" width="166" height="140" rx="20" fill="#111923" stroke="#ff9c34" stroke-width="8"/>
+ <path d="m279 167 47 49h-40q-7 0-7-7Z" fill="#ffaa46"/>
+ <rect x="178" y="241" width="132" height="44" rx="7" fill="#ff8c25"/>
+ <text x="245" y="273" text-anchor="middle" fill="#111923" font-size="33" font-family="DejaVu Sans,Arial,sans-serif" font-weight="800">WEBP</text>
+ <path d="M52 54q145-83 248 48" fill="none" stroke="#ff7f18" stroke-width="11" stroke-linecap="round"/>
+ <path d="m291 75 27 43-51-9" fill="#ff8c25"/>
+ <path d="M318 322q-133 88-237-14" fill="none" stroke="#ff7f18" stroke-width="11" stroke-linecap="round"/>
+ <path d="m88 334-30-36 47 6" fill="#ff8c25"/>
+ </g>
+<text x="1319" y="467" font-family="DejaVu Sans,Arial,sans-serif" font-size="22" font-weight="800" fill="#eff3f7">FIREXCORE</text>
+</svg>

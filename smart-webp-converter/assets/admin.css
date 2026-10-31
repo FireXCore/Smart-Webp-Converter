@@ -1,0 +1,58 @@
+/*
+ * Smart WebP Converter administration. Scoped to the plugin pages.
+ * No remote fonts, JavaScript, external services or fabricated metrics.
+ */
+.swc-admin{max-width:1500px;margin:24px 24px 30px 0;color:#17212e;font-size:14px}
+.swc-admin *{box-sizing:border-box}
+.swc-header{display:flex;align-items:center;gap:17px;margin:6px 0 24px}
+.swc-header h1{font-size:30px;line-height:1.25;letter-spacing:-.7px;font-weight:700;color:#182230;margin:0 0 6px}
+.swc-header p{margin:0;color:#526174;font-size:14px}
+.swc-logo{display:inline-flex;align-items:center;justify-content:center;color:#ea6809;font-size:40px;width:60px;height:60px;background:#fff3e9;border:1px solid #ffd0aa;border-radius:16px;flex:0 0 60px}
+.swc-notice{display:flex;align-items:flex-start;gap:12px;margin:12px 0;padding:16px 20px;border-radius:9px;border:1px solid #b5d1f1;background:#f0f7ff;border-left:4px solid #2271b1}
+.swc-notice .dashicons{margin-top:1px;font-size:24px;width:26px;height:26px;flex:0 0 26px}
+.swc-notice p{margin:4px 0 0;line-height:1.55;color:#495869}
+.swc-notice-info{color:#125b9b}
+.swc-notice-warning{background:#fff8f0;border-color:#f4cb9c;border-left-color:#c74d0d;color:#a43a0a}
+.swc-notice-warning p{color:#743c24}
+.swc-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;margin:24px 0}
+.swc-stat{display:flex;flex-direction:column;gap:8px;padding:20px 22px;min-height:130px;background:#fff;border:1px solid #e4e8ee;border-radius:12px;box-shadow:0 2px 12px rgba(19,33,56,.035)}
+.swc-stat .dashicons{color:#e66a10;font-size:24px;width:25px;height:25px}
+.swc-stat-number{font-size:26px;line-height:1.1;font-weight:700;font-variant-numeric:tabular-nums;color:#1d2938}
+.swc-stat-label{font-size:12px;color:#657487}
+.swc-layout{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(300px,1fr);gap:16px;margin:24px 0}
+.swc-panel{min-width:0;background:#fff;border:1px solid #e1e7ee;border-radius:13px;box-shadow:0 3px 15px rgba(20,33,55,.035);padding:23px 26px}
+.swc-panel h2{display:flex;align-items:center;gap:8px;margin:0 0 20px;font-weight:700;font-size:20px;line-height:1.35;color:#17212e;padding-bottom:15px;border-bottom:1px solid #e8edf1}
+.swc-panel h2 .dashicons{color:#e66a10;font-size:22px;width:25px;height:25px}
+.swc-panel h3{margin:26px 0 16px}
+.swc-panel p{line-height:1.6;color:#526174}
+.swc-media-list{list-style:none;margin:0;padding:0}
+.swc-media-list li{display:flex;align-items:center;justify-content:space-between;gap:14px;margin:0;padding:13px 0;border-bottom:1px solid #edf0f3}
+.swc-media-list li:last-child{border-bottom:0}
+.swc-media-list a{font-weight:600;overflow-wrap:anywhere}
+.swc-status{display:inline-block;font-size:12px;padding:5px 9px;white-space:normal;border-radius:999px;background:#f0f3f7;color:#38465a;text-align:right}
+.swc-status-ready,.swc-status-native{background:#e6f5e9;color:#21622e}
+.swc-status-pending{background:#fff3e4;color:#974614}
+.swc-status-missing{background:#ffebea;color:#9d2b22}
+.swc-how{counter-reset:how;list-style:none;margin:8px 0 22px;padding:0}
+.swc-how li{counter-increment:how;display:flex;align-items:flex-start;gap:11px;line-height:1.5;margin:0 0 15px;color:#49586a}
+.swc-how li:before{content:counter(how);background:#ed6b0d;color:#fff;border-radius:100%;font-weight:700;display:inline-flex;align-items:center;justify-content:center;width:23px;height:23px;flex:0 0 23px}
+.swc-option{display:grid;grid-template-columns:minmax(150px,35%) minmax(0,1fr);gap:16px;border-bottom:1px solid #eef0f2;padding:18px 0}
+.swc-option>label{padding-top:4px;color:#243248}
+.swc-option:last-of-type{border-bottom:0}
+.swc-option input[type=number]{width:90px;height:37px}
+.swc-option .description{margin:7px 0 0;max-width:550px}
+.swc-option .swc-toggle{display:inline-flex;align-items:center;gap:9px;min-height:28px}
+.swc-option input[type=checkbox]{width:17px;height:17px}
+.swc-destructive{background:#fff8f2;border:1px solid #f4c8a3;border-radius:8px;padding:16px;margin-top:5px}
+.swc-destructive strong{color:#a43a0a}
+.swc-confirm{display:flex;align-items:flex-start;gap:8px;margin-top:14px;padding:12px 14px;border-radius:7px;background:#ffebdf;color:#823d17;font-weight:600}
+.swc-confirm input{flex:0 0 auto;margin-top:2px}
+.swc-settings .button-primary{padding:5px 19px;height:auto;margin-top:17px}
+.swc-aside .button{margin-top:4px}
+.swc-panel .card{box-shadow:none;border:0;padding:0;max-width:none;min-width:0}
+.swc-admin .notice{box-shadow:none}
+@media(max-width:1050px){.swc-layout{grid-template-columns:1fr}.swc-stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:782px){.swc-admin{margin:18px 10px 24px 0}.swc-header h1{font-size:24px}.swc-logo{width:47px;height:47px;flex-basis:47px;font-size:32px}.swc-panel{padding:18px}.swc-option{grid-template-columns:1fr;gap:6px}.swc-stats{grid-template-columns:1fr 1fr;gap:10px}.swc-stat{padding:14px;min-height:110px}.swc-stat-number{font-size:21px}}
+@media(max-width:450px){.swc-stats{grid-template-columns:1fr}.swc-media-list li{display:block}.swc-media-list .swc-status{margin-top:7px}}
+@media(prefers-reduced-motion:reduce){.swc-admin *{animation:none!important;transition:none!important}}
+@media(prefers-color-scheme:dark){body.admin-color-midnight .swc-admin{color:#243248}}
