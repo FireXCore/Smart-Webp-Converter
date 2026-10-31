@@ -42,5 +42,5 @@
 
 - `php -l` and isolated test harness on PHP 7.4, 8.2, 8.4.
 - Test cases: non-destructive default, sidecar + thumbnail generation, repeated metadata, responsive picture fallback, core/image blocks, collision avoidance, scaled attachments, replacement safety, invalid source behavior, and preserving alt text.
-- CI bundles `smart-webp-converter/` into an installable ZIP artifact.
-- Required before WordPress.org publication: full WordPress integration, WooCommerce image upload / frontend rendering, PHP GD and Imagick real-server tests, media offload/CDN compatibility review, RTL admin accessibility, plugin-check scans, image comparisons (alpha/color), restore/rollback dry-run, and regression on production-like staging.
+- CI bundles `smart-webp-converter/` into an installable ZIP artifact.\n- Real WordPress integration passed on WordPress 6.7.10 and 7.1.4 (actual uploads, thumbnails, replacement MIME, and picture output).
+- Required before WordPress.org publication: extended WordPress integration, WooCommerce image upload / frontend rendering, PHP GD and Imagick real-server tests, media offload/CDN compatibility review, RTL admin accessibility, plugin-check scans, image comparisons (alpha/color), restore/rollback dry-run, and regression on production-like staging.
