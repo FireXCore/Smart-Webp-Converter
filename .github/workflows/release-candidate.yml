@@ -1,0 +1,54 @@
+name: Publish GitHub 1.2.0 release candidate
+
+on:
+  workflow_run:
+    workflows: ["WordPress plugin checks and package"]
+    types: [completed]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: swc-release-candidate-1.2.0
+  cancel-in-progress: false
+
+jobs:
+  prerelease:
+    if: >-
+      ${{ github.event.workflow_run.conclusion == 'success' &&
+          github.event.workflow_run.event == 'push' &&
+          github.event.workflow_run.head_branch == 'main' &&
+          github.event.workflow_run.head_repository.full_name == github.repository }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout tested commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          persist-credentials: false
+      - name: Validate package metadata
+        run: |
+          grep -Fq 'Version: 1.2.0' smart-webp-converter/smart-webp-converter.php
+          grep -Fq 'Stable tag: 1.2.0' smart-webp-converter/readme.txt
+          php -l smart-webp-converter/smart-webp-converter.php
+      - name: Build installable release-candidate asset
+        run: |
+          zip -q -r smart-webp-converter-1.2.0-rc.1.zip smart-webp-converter
+          unzip -t smart-webp-converter-1.2.0-rc.1.zip
+          sha256sum smart-webp-converter-1.2.0-rc.1.zip > SHA256SUMS
+      - name: Create prerelease once, only after green CI
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TESTED_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          if gh release view v1.2.0-rc.1 >/dev/null 2>&1; then
+            echo "The release candidate is already published; no changes made."
+            exit 0
+          fi
+          gh release create v1.2.0-rc.1 \
+            smart-webp-converter-1.2.0-rc.1.zip SHA256SUMS \
+            --target "$TESTED_SHA" \
+            --title "Smart WebP Converter 1.2.0 — Release Candidate 1" \
+            --notes-file .github/RELEASE_CANDIDATE_NOTES.md \
+            --prerelease --latest=false
