@@ -1,9 +1,13 @@
-# Smart WebP Converter 1.2.0 — Release Candidate 2
+# Smart WebP Converter 1.2.1 — Release Candidate 2
 
 **This is a GitHub preview build, not the final WordPress.org release.**
 WordPress.org remains on version 1.1.0 until separate maintainer publication and staging acceptance.
 
 ## Changes
+- New WordPress admin dashboard and settings design with real conversion statistics and Media Library status.
+- Destructive replacement now requires a separate explicit deletion confirmation on settings save.
+- Real WordPress admin screenshots and branded WordPress.org assets are included in the validated CI SVN package.
+
 - Convert before WordPress registers a media attachment when opting into original replacement.
 - Safe default preserves original JPEG/PNG files and creates lasting WebP sidecars for full images and thumbnails.
 - Render responsive WebP `picture` sources with original fallback for attachment images and core/image blocks.
@@ -29,6 +33,6 @@ WordPress.org remains on version 1.1.0 until separate maintainer publication and
 - Replace Original remains opt-in and is destructive for **new uploads**. Keep it off without a full backup and staging verification.
 
 ## Install for staging only
-Download `smart-webp-converter-1.2.0-rc.2.zip` from **Assets**, then use WordPress > Plugins > Add New > Upload Plugin. The ZIP contains the required `smart-webp-converter/` directory.
+Download `smart-webp-converter-1.2.1-rc.2.zip` from **Assets**, then use WordPress > Plugins > Add New > Upload Plugin. The ZIP contains the required `smart-webp-converter/` directory.
 
 Release-gating checklist: https://github.com/FireXCore/Smart-Webp-Converter/issues/2
