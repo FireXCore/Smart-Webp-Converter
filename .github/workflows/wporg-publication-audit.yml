@@ -20,7 +20,7 @@ jobs:
           sudo apt-get update -qq
           sudo apt-get install -y -qq subversion unzip file
           base=https://plugins.svn.wordpress.org/smart-webp-converter
-          mkdir -p /tmp/wporg/trunk /tmp/wporg/assets
+          mkdir -p /tmp/wporg
           svn export -q "$base/trunk/" /tmp/wporg/trunk
           svn export -q "$base/assets/" /tmp/wporg/assets
           echo "=== PUBLIC TRUNK VERSION ==="
