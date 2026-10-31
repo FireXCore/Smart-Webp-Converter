@@ -177,4 +177,31 @@ $failed = $plugin->handle_upload( array(
 ) );
 check( $failed['type'] === 'image/png' && is_file( $fake ), 'invalid image is not deleted' );
 
+// Two different extensions can share a filename stem; never serve someone else's WebP.
+$GLOBALS['swc_options']['firexcore_webp_replace_original'] = false;
+$collision = $dir . '/duplicate.png';
+make_png( $collision );
+copy( $dir . '/flower.webp', $dir . '/duplicate.webp' );
+$GLOBALS['swc_files'][25] = $collision;
+$GLOBALS['swc_mimes'][25] = 'image/png';
+$before = count( $GLOBALS['wpdb']->rows );
+$plugin->attachment_metadata( array(), 25 );
+check( count( $GLOBALS['wpdb']->rows ) === $before, 'colliding sidecar is not claimed or logged' );
+$collision_html = '<img src="https://example.test/wp-content/uploads/duplicate.png">';
+check( $plugin->attachment_picture( $collision_html, 25 ) === $collision_html, 'unowned WebP is never served' );
+
+// WordPress may generate a -scaled image before the metadata filter.
+$GLOBALS['swc_options']['firexcore_webp_replace_original'] = true;
+$big = $dir . '/scaled.png';
+make_png( $big );
+$upload = $plugin->handle_upload( array(
+    'file' => $big, 'url' => 'https://example.test/wp-content/uploads/scaled.png', 'type' => 'image/png',
+) );
+$scaled = $dir . '/scaled-scaled.webp';
+copy( $upload['file'], $scaled );
+$GLOBALS['swc_files'][26] = $scaled;
+$GLOBALS['swc_mimes'][26] = 'image/webp';
+$plugin->attachment_metadata( array( 'original_image' => basename( $upload['file'] ) ), 26 );
+check( count( $GLOBALS['wpdb']->rows ) === $before + 1, 'scaled WebP upload retains stats' );
+
 echo 'All smoke tests passed.' . PHP_EOL;
