@@ -1,0 +1,88 @@
+name: Audit live WordPress.org SVN and distribution (read-only)
+
+on:
+  push:
+    branches: [audit/wporg-publication-20261031]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  live-release-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inspect public SVN, assets and downloadable plugin ZIP
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq subversion unzip file
+          base=https://plugins.svn.wordpress.org/smart-webp-converter
+          mkdir -p /tmp/wporg/trunk /tmp/wporg/assets
+          svn export -q "$base/trunk/" /tmp/wporg/trunk
+          svn export -q "$base/assets/" /tmp/wporg/assets
+          echo "=== PUBLIC TRUNK VERSION ==="
+          grep -E '^ \* Version:|^Stable tag:' /tmp/wporg/trunk/smart-webp-converter.php /tmp/wporg/trunk/readme.txt
+          echo "=== FILE HASH COMPARISON: LIVE SVN vs GitHub MAIN ==="
+          for f in smart-webp-converter.php readme.txt; do
+            echo "--- $f"
+            sha256sum "/tmp/wporg/trunk/$f" "smart-webp-converter/$f"
+            if cmp -s "/tmp/wporg/trunk/$f" "smart-webp-converter/$f"; then
+              echo "MATCH: $f"
+            else
+              echo "::warning::SVN trunk differs from GitHub main for $f"
+            fi
+          done
+          if test -f /tmp/wporg/trunk/assets/admin.css; then
+            if cmp -s /tmp/wporg/trunk/assets/admin.css smart-webp-converter/assets/admin.css; then
+              echo "MATCH: trunk/assets/admin.css"
+            else
+              echo "::warning::SVN admin CSS differs from GitHub main"
+            fi
+          else
+            echo "::warning::Missing trunk/assets/admin.css"
+          fi
+          echo "=== ASSET INVENTORY ==="
+          missing=0
+          for file in banner-1544x500.png banner-772x250.png icon-256x256.png icon-128x128.png screenshot-1.png screenshot-2.png; do
+            if test -s "/tmp/wporg/assets/$file"; then
+              file "/tmp/wporg/assets/$file"
+              echo "PASS: assets/$file"
+            else
+              echo "::error::Missing WordPress.org asset: $file"
+              missing=$((missing+1))
+            fi
+          done
+          echo "=== PUBLIC SVN TAGS ==="
+          svn ls "$base/tags/"
+          tag_ok=0
+          if svn ls "$base/tags/1.2.1/" > /dev/null 2>&1; then
+            tag_ok=1
+            echo "PASS: tags/1.2.1 exists"
+            svn cat "$base/tags/1.2.1/smart-webp-converter.php" | grep -m1 'Version:'
+            svn cat "$base/tags/1.2.1/readme.txt" | grep -m1 'Stable tag:'
+          else
+            echo "::error::Missing tags/1.2.1 — release is incomplete"
+          fi
+          echo "=== PUBLIC DISTRIBUTION DOWNLOAD ==="
+          url=https://downloads.wordpress.org/plugin/smart-webp-converter.1.2.1.zip
+          if curl -fsSL --connect-timeout 15 --max-time 60 "$url" -o /tmp/wporg/download.zip; then
+            if unzip -t /tmp/wporg/download.zip > /dev/null; then
+              echo "PASS: public 1.2.1 ZIP downloads and passes CRC check"
+              unzip -p /tmp/wporg/download.zip 'smart-webp-converter/smart-webp-converter.php' | grep -m1 'Version:'
+              unzip -p /tmp/wporg/download.zip 'smart-webp-converter/readme.txt' | grep -m1 'Stable tag:'
+            else
+              echo "::error::Public download ZIP is corrupt"
+              exit 1
+            fi
+          else
+            echo "::warning::Public versioned ZIP unavailable (may still be propagating)"
+          fi
+          echo "=== AUDIT OUTCOME ==="
+          if test "$missing" -ne 0 || test "$tag_ok" -eq 0; then
+            echo "FAIL: SVN release is not complete"
+            exit 1
+          fi
+          echo "PASS: SVN tag, content, and all expected images are published"
