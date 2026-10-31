@@ -40,6 +40,12 @@ function register_activation_hook( $file, $callback ) {}
 function add_action( ...$args ) {}
 function add_filter( ...$args ) {}
 function plugin_basename( $file ) { return basename( $file ); }
+function wp_unslash( $value ) { return stripslashes( $value ); }
+function add_settings_error( $setting, $code, $message, $type = 'error' ) {
+    $GLOBALS['swc_last_settings_error'] = array( $setting, $code, $message, $type );
+}
+function __( $text, $domain = '' ) { return $text; }
+
 function get_option( $key, $default = false ) { return $GLOBALS['swc_options'][$key] ?? $default; }
 function wp_normalize_path( $path ) { return str_replace( chr(92), '/', $path ); }
 function wp_delete_file( $path ) { $GLOBALS['swc_deleted'][] = $path; if ( file_exists( $path ) ) unlink( $path ); }
@@ -104,6 +110,14 @@ check( $plugin->sanitize_quality( '-10' ) === 1, 'quality lower bound' );
 check( $plugin->sanitize_quality( '999' ) === 100, 'quality upper bound' );
 check( $plugin->sanitize_bool( '0' ) === false, 'checkbox disabled' );
 check( $plugin->sanitize_bool( '1' ) === true, 'checkbox enabled' );
+check( $plugin->sanitize_destructive_mode( 0 ) === false, 'destructive option can always be disabled' );
+unset( $_POST['firexcore_webp_confirm_delete'] );
+check( $plugin->sanitize_destructive_mode( 1 ) === false, 'destructive option requires separate confirmation' );
+check( isset( $GLOBALS['swc_last_settings_error'] ), 'destructive confirmation error is visible' );
+$_POST['firexcore_webp_confirm_delete'] = '1';
+check( $plugin->sanitize_destructive_mode( 1 ) === true, 'explicit confirmation permits destructive mode' );
+unset( $_POST['firexcore_webp_confirm_delete'] );
+
 
 $dir = sys_get_temp_dir() . '/swc-' . bin2hex( random_bytes( 6 ) );
 mkdir( $dir, 0700, true );
