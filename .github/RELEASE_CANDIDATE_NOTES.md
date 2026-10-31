@@ -1,0 +1,27 @@
+# Smart WebP Converter 1.2.0 — Release Candidate 1
+
+**This is a GitHub preview build, not the final WordPress.org release.**
+WordPress.org remains on version 1.1.0 until separate maintainer publication and staging acceptance.
+
+## Changes
+- Convert before WordPress registers a media attachment when opting into original replacement.
+- Safe default preserves original JPEG/PNG files and creates lasting WebP sidecars for full images and thumbnails.
+- Render responsive WebP `picture` sources with original fallback for attachment images and core/image blocks.
+- Avoid animated GIF flattening, overwriting unrelated sidecars, duplicate statistics, false lossless claims and expensive dashboard queries.
+- Improve option persistence and remove external dashboard JavaScript.
+
+## Automated verification
+- PHP lint and smoke tests on PHP 7.4, 8.2 and 8.4.
+- Actual WordPress media upload, thumbnail and markup integration on WordPress 6.7.10 and 7.1.4.
+- WordPress Plugin Check: 0 errors, 8 warnings relating to the existing custom statistics table direct queries/caching.
+
+## Not yet accepted for production
+- WooCommerce galleries, multisite, remote/offloaded media, CDN rewriting, animated and large-image matrix, color profile fidelity and production-like staging.
+- Historical repository MIT `LICENSE` and WordPress.org GPLv2-or-later declarations require a maintainer-confirmed license approach before stable publication.
+- Existing library is **not** bulk migrated and legacy `webp-temp` files are deliberately left intact.
+- Replace Original remains opt-in and is destructive for **new uploads**. Keep it off without a full backup and staging verification.
+
+## Install for staging only
+Download `smart-webp-converter-1.2.0-rc.1.zip` from **Assets**, then use WordPress > Plugins > Add New > Upload Plugin. The ZIP contains the required `smart-webp-converter/` directory.
+
+Release-gating checklist: https://github.com/FireXCore/Smart-Webp-Converter/issues/2
