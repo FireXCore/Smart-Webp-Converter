@@ -61,8 +61,29 @@ jobs:
           if svn ls "$base/tags/1.2.1/" > /dev/null 2>&1; then
             tag_ok=1
             echo "PASS: tags/1.2.1 exists"
-            svn cat "$base/tags/1.2.1/smart-webp-converter.php" | grep -m1 'Version:'
-            svn cat "$base/tags/1.2.1/readme.txt" | grep -m1 'Stable tag:'
+            echo "=== TAG FILE INVENTORY ==="
+            svn ls -R "$base/tags/1.2.1/"
+            echo "=== TAG README STATUS ==="
+            if svn cat "$base/tags/1.2.1/readme.txt" > /tmp/wporg/tag-readme.txt; then
+              grep -E 'Stable tag:|Requires PHP:' /tmp/wporg/tag-readme.txt || true
+              sha256sum /tmp/wporg/tag-readme.txt /tmp/wporg/trunk/readme.txt
+              if cmp -s /tmp/wporg/tag-readme.txt /tmp/wporg/trunk/readme.txt; then
+                echo "MATCH: tag readme equals trunk"
+              else
+                echo "::error::Tag readme does not match trunk"
+              fi
+            else
+              echo "::error::Tag readme unavailable"
+            fi
+            echo "=== TAG CODE STATUS ==="
+            if svn cat "$base/tags/1.2.1/smart-webp-converter.php" > /tmp/wporg/tag-code.php; then
+              grep -m1 'Version:' /tmp/wporg/tag-code.php || true
+              if cmp -s /tmp/wporg/tag-code.php /tmp/wporg/trunk/smart-webp-converter.php; then
+                echo "MATCH: tag code equals trunk"
+              else
+                echo "::error::Tag code differs from trunk"
+              fi
+            fi
           else
             echo "::error::Missing tags/1.2.1 — release is incomplete"
           fi
