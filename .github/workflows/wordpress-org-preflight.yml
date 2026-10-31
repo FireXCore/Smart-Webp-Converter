@@ -1,0 +1,85 @@
+name: WordPress.org SVN release preflight (read-only)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'smart-webp-converter/**'
+      - '.github/workflows/wordpress-org-preflight.yml'
+  pull_request:
+    paths:
+      - 'smart-webp-converter/**'
+      - '.github/workflows/wordpress-org-preflight.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  prepare:
+    name: Prepare SVN trunk package without publishing
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify plugin entry points and version
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s smart-webp-converter/smart-webp-converter.php
+          test -s smart-webp-converter/readme.txt
+          grep -Fq 'Version: 1.2.0' smart-webp-converter/smart-webp-converter.php
+          grep -Fq 'Stable tag: 1.2.0' smart-webp-converter/readme.txt
+          grep -Fq 'License: GPLv2 or later' smart-webp-converter/readme.txt
+          php -l smart-webp-converter/smart-webp-converter.php
+
+      - name: Read public WordPress.org SVN state (no credentials)
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq subversion
+          mkdir -p wporg-public-trunk
+          svn export -q https://plugins.svn.wordpress.org/smart-webp-converter/trunk/ wporg-public-trunk
+          test -s wporg-public-trunk/readme.txt
+          test -s wporg-public-trunk/smart-webp-converter.php
+          echo "Existing public version:"
+          grep -E '^[[:space:]]*\*?[[:space:]]*Version:|^Stable tag:' wporg-public-trunk/smart-webp-converter.php wporg-public-trunk/readme.txt || true
+          echo "Current public SVN tags:"
+          svn ls https://plugins.svn.wordpress.org/smart-webp-converter/tags/
+
+      - name: Package only deployable plugin files
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p wporg-ready/trunk
+          cp -a smart-webp-converter/. wporg-ready/trunk/
+          test -s wporg-ready/trunk/readme.txt
+          test -s wporg-ready/trunk/smart-webp-converter.php
+          if find wporg-ready/trunk -type f \( -name '*.zip' -o -name '.env' -o -name '*.log' \) | grep -q .; then
+            echo 'Unsafe file found in SVN payload' >&2
+            exit 1
+          fi
+          (cd wporg-ready/trunk && find . -type f -print | sort)
+          diff -u wporg-public-trunk/readme.txt wporg-ready/trunk/readme.txt > wporg-readme-diff.txt || true
+          diff -u wporg-public-trunk/smart-webp-converter.php wporg-ready/trunk/smart-webp-converter.php > wporg-code-diff.txt || true
+          (cd wporg-ready && zip -q -r ../smart-webp-converter-1.2.0-svn-preflight.zip trunk)
+          unzip -t smart-webp-converter-1.2.0-svn-preflight.zip
+          sha256sum smart-webp-converter-1.2.0-svn-preflight.zip > wporg-preflight-SHA256SUMS
+          {
+            echo "## WordPress.org SVN preflight"
+            echo "Read-only: no SVN commit, tag, or public release performed."
+            echo "Prepared source version: 1.2.0"
+            echo "Public plugin: https://wordpress.org/plugins/smart-webp-converter/"
+            echo "Public SVN: https://plugins.svn.wordpress.org/smart-webp-converter/"
+            echo "Production release gate: https://github.com/FireXCore/Smart-Webp-Converter/issues/2"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wporg-1.2.0-svn-preflight
+          path: |
+            smart-webp-converter-1.2.0-svn-preflight.zip
+            wporg-preflight-SHA256SUMS
+            wporg-readme-diff.txt
+            wporg-code-diff.txt
+          if-no-files-found: error
