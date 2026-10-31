@@ -48,7 +48,7 @@ Limitations and safeguards:
 == Upgrade Notice ==
 
 = 1.2.0 =
-Major safety and lifecycle correction. Requires PHP 7.4+. Existing options, files and conversion records are retained. No automatic migration or deletion of legacy webp-temp contents. The former dashboard's remote Chart.js chart/suggestions and ineffective temporary-cache-header hooks have been removed.
+Requires PHP 7.4+. Preserves existing options, media and statistics. No legacy webp-temp deletion or bulk migration. Retired dashboard charts/suggestions and ineffective cache hooks have been removed.
 
 == Changelog ==
 
