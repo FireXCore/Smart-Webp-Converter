@@ -103,6 +103,14 @@ jobs:
           wpdir="$RUNNER_TEMP/swc-wordpress"
           php wp-cli.phar option update home http://127.0.0.1:8765 --path="$wpdir"
           php wp-cli.phar option update siteurl http://127.0.0.1:8765 --path="$wpdir"
+          # The upgrade fixture deliberately seeds nondefault settings. Reset UI state
+          # for authentic user-facing screenshots with safe, documented defaults.
+          php wp-cli.phar option update firexcore_webp_quality 80 --path="$wpdir"
+          php wp-cli.phar option update firexcore_webp_replace_original 0 --path="$wpdir"
+          php wp-cli.phar option update firexcore_webp_strip_metadata 1 --path="$wpdir"
+          php wp-cli.phar option update firexcore_webp_lossless 0 --path="$wpdir"
+          php wp-cli.phar option update firexcore_webp_lazy_loading 1 --path="$wpdir"
+          php wp-cli.phar option update firexcore_webp_seo_optimization 1 --path="$wpdir"
           php -S 127.0.0.1:8765 -t "$wpdir" > "$RUNNER_TEMP/web-server.log" 2>&1 &
           for i in {1..30}; do
             if curl --fail --silent --output /dev/null http://127.0.0.1:8765/wp-login.php; then break; fi
