@@ -96,6 +96,30 @@ jobs:
           echo "Plugin Check exit code: $status"
           head -c 20000 plugin-check-results.txt
           test -s plugin-check-results.txt
+      - name: Capture real WordPress admin screenshots
+        if: matrix.wp == 'latest'
+        run: |
+          set -euo pipefail
+          wpdir="$RUNNER_TEMP/swc-wordpress"
+          php wp-cli.phar option update home http://127.0.0.1:8765 --path="$wpdir"
+          php wp-cli.phar option update siteurl http://127.0.0.1:8765 --path="$wpdir"
+          php -S 127.0.0.1:8765 -t "$wpdir" > "$RUNNER_TEMP/web-server.log" 2>&1 &
+          for i in {1..30}; do
+            if curl --fail --silent --output /dev/null http://127.0.0.1:8765/wp-login.php; then break; fi
+            sleep 1
+          done
+          npm install --no-save playwright
+          npx playwright install chromium
+          SWC_SCREENSHOT_DIR="$GITHUB_WORKSPACE/wporg-screenshots" node tests/capture-admin.mjs
+          test -s wporg-screenshots/screenshot-1.png
+          test -s wporg-screenshots/screenshot-2.png
+      - uses: actions/upload-artifact@v4
+        if: matrix.wp == 'latest'
+        with:
+          name: wporg-real-screenshots
+          path: wporg-screenshots/screenshot-*.png
+          if-no-files-found: error
+
       - uses: actions/upload-artifact@v4
         if: matrix.wp == 'latest'
         with:
@@ -108,12 +132,35 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Build installable plugin ZIP
+      - name: Install asset renderer
+        run: python3 -m pip install --break-system-packages cairosvg pillow
+      - name: Download authenticated WordPress screenshots
+        uses: actions/download-artifact@v4
+        with:
+          name: wporg-real-screenshots
+          path: wporg-svn/assets
+      - name: Build branded WordPress.org SVN assets
+        run: python3 artwork/render_assets.py --output wporg-svn/assets
+      - name: Build installable plugin ZIP and complete SVN package
         run: |
-          zip -q -r smart-webp-converter-1.2.0.zip smart-webp-converter
-          unzip -l smart-webp-converter-1.2.0.zip
+          set -euo pipefail
+          grep -Fq 'Version: 1.2.1' smart-webp-converter/smart-webp-converter.php
+          grep -Fq 'Stable tag: 1.2.1' smart-webp-converter/readme.txt
+          zip -qr smart-webp-converter-1.2.1.zip smart-webp-converter
+          mkdir -p wporg-svn/trunk
+          cp -a smart-webp-converter/. wporg-svn/trunk/
+          test -s wporg-svn/assets/screenshot-1.png
+          test -s wporg-svn/assets/screenshot-2.png
+          (cd wporg-svn && zip -qr ../smart-webp-converter-1.2.1-SVN.zip trunk assets)
+          unzip -t smart-webp-converter-1.2.1.zip
+          unzip -t smart-webp-converter-1.2.1-SVN.zip
+          sha256sum smart-webp-converter-1.2.1*.zip > SHA256SUMS
+          ls -lh *.zip SHA256SUMS
       - uses: actions/upload-artifact@v4
         with:
-          name: smart-webp-converter-1.2.0
-          path: smart-webp-converter-1.2.0.zip
+          name: smart-webp-converter-1.2.1-complete
+          path: |
+            smart-webp-converter-1.2.1.zip
+            smart-webp-converter-1.2.1-SVN.zip
+            SHA256SUMS
           if-no-files-found: error
