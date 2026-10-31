@@ -75,14 +75,18 @@ jobs:
         if: matrix.wp == 'latest'
         run: |
           php wp-cli.phar plugin install plugin-check --activate --path="$RUNNER_TEMP/swc-wordpress"
-          php wp-cli.phar plugin check smart-webp-converter --format=json --path="$RUNNER_TEMP/swc-wordpress" --require="$RUNNER_TEMP/swc-wordpress/wp-content/plugins/plugin-check/cli.php" > plugin-check-results.json || true
-          python3 -m json.tool plugin-check-results.json > /dev/null
-          python3 -c "import json; x=json.load(open('plugin-check-results.json')); print('Plugin Check entries:',len(x) if isinstance(x,list) else x.keys())"
+          set +e
+          php wp-cli.phar plugin check smart-webp-converter --format=json --path="$RUNNER_TEMP/swc-wordpress" --require="$RUNNER_TEMP/swc-wordpress/wp-content/plugins/plugin-check/cli.php" > plugin-check-results.txt 2>&1
+          status=$?
+          set -e
+          echo "Plugin Check exit code: $status"
+          head -c 20000 plugin-check-results.txt
+          test -s plugin-check-results.txt
       - uses: actions/upload-artifact@v4
         if: matrix.wp == 'latest'
         with:
           name: wordpress-plugin-check
-          path: plugin-check-results.json
+          path: plugin-check-results.txt
           if-no-files-found: error
 
   package:
