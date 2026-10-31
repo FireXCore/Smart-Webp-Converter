@@ -3,7 +3,7 @@ Contributors: firexcore
 Tags: webp, images, performance, optimization, media
 Requires at least: 5.8
 Requires PHP: 7.4
-Tested up to: 6.7.10
+Tested up to: 7.1
 Stable tag: 1.2.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -27,7 +27,7 @@ Other features:
 * Existing database statistics retained.
 
 Limitations and safeguards:
-* Only new uploads are processed; existing media is not bulk-converted.
+* New uploads are processed. Explicit regeneration of attachment metadata can create sidecars for existing images; no automatic bulk pass is run.
 * Animated GIFs are skipped to preserve animation. GIFs require Imagick even when single-frame.
 * Large images above 40 million pixels are skipped.
 * Raw HTML image URLs and CSS background images are not automatically rewritten.
@@ -35,7 +35,7 @@ Limitations and safeguards:
 * Legacy images from older releases (including webp-temp files) are not deleted or migrated automatically.
 * Lossless requires Imagick; when unavailable, lossless requests are skipped rather than silently using lossy conversion.
 * Test replacement on staging with a backup first. It changes new upload filenames and MIME types.
-* WordPress compatibility above version 6.7.10 has not yet been certified.
+* Smoke integration has passed on WordPress 6.7.10 and 7.1.4. WooCommerce, multisite and CDN variants still require testing.
 
 == Installation ==
 
