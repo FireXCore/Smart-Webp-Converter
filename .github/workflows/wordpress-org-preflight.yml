@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - 'smart-webp-converter/**'
+      - 'artwork/**'
       - '.github/workflows/wordpress-org-preflight.yml'
   pull_request:
     paths:
@@ -27,8 +28,8 @@ jobs:
           set -euo pipefail
           test -s smart-webp-converter/smart-webp-converter.php
           test -s smart-webp-converter/readme.txt
-          grep -Fq 'Version: 1.2.0' smart-webp-converter/smart-webp-converter.php
-          grep -Fq 'Stable tag: 1.2.0' smart-webp-converter/readme.txt
+          grep -Fq 'Version: 1.2.1' smart-webp-converter/smart-webp-converter.php
+          grep -Fq 'Stable tag: 1.2.1' smart-webp-converter/readme.txt
           grep -Fq 'License: GPLv2 or later' smart-webp-converter/readme.txt
           php -l smart-webp-converter/smart-webp-converter.php
 
@@ -52,6 +53,8 @@ jobs:
           set -euo pipefail
           mkdir -p wporg-ready/trunk
           cp -a smart-webp-converter/. wporg-ready/trunk/
+          python3 -m pip install --break-system-packages cairosvg pillow
+          python3 artwork/render_assets.py --output wporg-ready/assets
           test -s wporg-ready/trunk/readme.txt
           test -s wporg-ready/trunk/smart-webp-converter.php
           if find wporg-ready/trunk -type f \( -name '*.zip' -o -name '.env' -o -name '*.log' \) | grep -q .; then
@@ -61,13 +64,13 @@ jobs:
           (cd wporg-ready/trunk && find . -type f -print | sort)
           diff -u wporg-public-trunk/readme.txt wporg-ready/trunk/readme.txt > wporg-readme-diff.txt || true
           diff -u wporg-public-trunk/smart-webp-converter.php wporg-ready/trunk/smart-webp-converter.php > wporg-code-diff.txt || true
-          (cd wporg-ready && zip -q -r ../smart-webp-converter-1.2.0-svn-preflight.zip trunk)
-          unzip -t smart-webp-converter-1.2.0-svn-preflight.zip
-          sha256sum smart-webp-converter-1.2.0-svn-preflight.zip > wporg-preflight-SHA256SUMS
+          (cd wporg-ready && zip -q -r ../smart-webp-converter-1.2.1-svn-preflight.zip trunk)
+          unzip -t smart-webp-converter-1.2.1-svn-preflight.zip
+          sha256sum smart-webp-converter-1.2.1-svn-preflight.zip > wporg-preflight-SHA256SUMS
           {
             echo "## WordPress.org SVN preflight"
             echo "Read-only: no SVN commit, tag, or public release performed."
-            echo "Prepared source version: 1.2.0"
+            echo "Prepared source version: 1.2.1"
             echo "Public plugin: https://wordpress.org/plugins/smart-webp-converter/"
             echo "Public SVN: https://plugins.svn.wordpress.org/smart-webp-converter/"
             echo "Production release gate: https://github.com/FireXCore/Smart-Webp-Converter/issues/2"
@@ -75,9 +78,9 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: wporg-1.2.0-svn-preflight
+          name: wporg-1.2.1-svn-preflight
           path: |
-            smart-webp-converter-1.2.0-svn-preflight.zip
+            smart-webp-converter-1.2.1-svn-preflight.zip
             wporg-preflight-SHA256SUMS
             wporg-readme-diff.txt
             wporg-code-diff.txt
