@@ -24,7 +24,7 @@ Other features:
 * Native WordPress settings permissions/nonces.
 * Conversion dashboard using locally rendered HTML/CSS (no remote scripts).
 * Existing attachment alt text preserved; only meaningful editorial titles fill empty alt text.
-* Existing database statistics retained.
+* Existing database statistics and `firexcore_webp_*` settings retained from version 1.1.0.
 
 Limitations and safeguards:
 * New uploads are processed. Explicit regeneration of attachment metadata can create sidecars for existing images; no automatic bulk pass is run.
@@ -34,6 +34,7 @@ Limitations and safeguards:
 * Attachment images hosted through a CDN using a different base URL may not receive a picture source. Originals remain functional.
 * Legacy images from older releases (including webp-temp files) are not deleted or migrated automatically.
 * Lossless requires Imagick; when unavailable, lossless requests are skipped rather than silently using lossy conversion.
+* Requires PHP 7.4+ (version 1.1.0 required PHP 7.2+). Hosts on PHP 7.2/7.3 must upgrade PHP before installing this update.
 * Test replacement on staging with a backup first. It changes new upload filenames and MIME types.
 * Smoke integration has passed on WordPress 6.7.10 and 7.1.4. WooCommerce, multisite and CDN variants still require testing.
 
@@ -47,7 +48,7 @@ Limitations and safeguards:
 == Upgrade Notice ==
 
 = 1.2.0 =
-Major safety and lifecycle correction. Existing files and conversion records are kept. No automatic migration or deletion of legacy webp-temp contents.
+Major safety and lifecycle correction. Requires PHP 7.4+. Existing options, files and conversion records are retained. No automatic migration or deletion of legacy webp-temp contents. The former dashboard's remote Chart.js chart/suggestions and ineffective temporary-cache-header hooks have been removed.
 
 == Changelog ==
 
@@ -60,3 +61,5 @@ Major safety and lifecycle correction. Existing files and conversion records are
 * Prevent repeated schema work and remove ineffective cron/cache-header logic.
 * Remove external Chart.js dependency and expensive full WooCommerce product enumeration.
 * Correct checkbox persistence, settings sanitization, and release documentation.
+* Preserve existing 1.1.0 option names and conversion statistics; new uploads require PHP 7.4+.
+* Remove historical remote Chart.js and smart suggestions UI; image conversion and basic statistics remain.
