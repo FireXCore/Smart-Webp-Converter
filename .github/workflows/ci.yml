@@ -71,6 +71,20 @@ jobs:
           php wp-cli.phar plugin activate smart-webp-converter --path="$RUNNER_TEMP/swc-wordpress"
       - name: Real WordPress image integration
         run: php wp-cli.phar eval-file "$GITHUB_WORKSPACE/tests/wp-integration.php" --path="$RUNNER_TEMP/swc-wordpress"
+      - name: Upgrade existing WordPress.org 1.1.0 installation
+        if: matrix.wp == 'latest'
+        run: |
+          set -euo pipefail
+          wpdir="$RUNNER_TEMP/swc-wordpress"
+          php wp-cli.phar plugin deactivate smart-webp-converter --path="$wpdir"
+          php wp-cli.phar plugin delete smart-webp-converter --path="$wpdir"
+          php wp-cli.phar plugin install smart-webp-converter --version=1.1.0 --activate --path="$wpdir"
+          php wp-cli.phar eval-file "$GITHUB_WORKSPACE/tests/wp-upgrade-fixture.php" seed --path="$wpdir"
+          php wp-cli.phar plugin deactivate smart-webp-converter --path="$wpdir"
+          php wp-cli.phar plugin delete smart-webp-converter --path="$wpdir"
+          cp -a smart-webp-converter "$wpdir/wp-content/plugins/"
+          php wp-cli.phar plugin activate smart-webp-converter --path="$wpdir"
+          php wp-cli.phar eval-file "$GITHUB_WORKSPACE/tests/wp-upgrade-fixture.php" verify --path="$wpdir"
       - name: WordPress.org Plugin Check diagnostic
         if: matrix.wp == 'latest'
         run: |
