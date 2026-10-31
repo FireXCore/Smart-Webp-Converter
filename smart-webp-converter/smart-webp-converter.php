@@ -479,8 +479,9 @@ final class FireXCore_WebP_Converter {
         if ( ! current_user_can( 'manage_options' ) ) {
             wp_die( esc_html__( 'Insufficient permissions.', 'smart-webp-converter' ), '', array( 'response' => 403 ) );
         }
+        // Authenticate the mutation before accepting any request fields.
+        check_admin_referer( 'firexcore_webp_generate_one' );
         $attachment_id = isset( $_POST['attachment_id'] ) ? absint( wp_unslash( $_POST['attachment_id'] ) ) : 0;
-        check_admin_referer( 'firexcore_webp_generate_one_' . $attachment_id );
         if ( ! $attachment_id || 'attachment' !== get_post_type( $attachment_id ) ||
              ! current_user_can( 'edit_post', $attachment_id ) ) {
             wp_die( esc_html__( 'Invalid media attachment.', 'smart-webp-converter' ), '', array( 'response' => 400 ) );
@@ -522,7 +523,7 @@ final class FireXCore_WebP_Converter {
             echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php' ) ) . '">';
             echo '<input type="hidden" name="action" value="firexcore_webp_generate_one">';
             echo '<input type="hidden" name="attachment_id" value="' . esc_attr( $attachment_id ) . '">';
-            wp_nonce_field( 'firexcore_webp_generate_one_' . $attachment_id );
+            wp_nonce_field( 'firexcore_webp_generate_one' );
             submit_button( __( 'Generate WebP sidecar now (keep original)', 'smart-webp-converter' ), 'secondary', 'submit', false );
             echo '</form>';
         }
