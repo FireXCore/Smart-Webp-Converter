@@ -43,7 +43,7 @@ if ( 'seed' === $mode ) {
     WP_CLI::success( 'Legacy settings and statistics seeded' );
 } elseif ( 'verify' === $mode ) {
     $version = get_file_data( WP_PLUGIN_DIR . '/smart-webp-converter/smart-webp-converter.php', array( 'Version' => 'Version' ) );
-    firexcore_upgrade_assert( '1.2.0' === $version['Version'], 'upgraded plugin version is 1.2.0' );
+    firexcore_upgrade_assert( '1.2.1' === $version['Version'], 'upgraded plugin version is 1.2.1' );
     foreach ( $expect as $key => $value ) {
         firexcore_upgrade_assert( $value === (string) get_option( $key ), 'option survives upgrade: ' . $key );
     }
@@ -52,8 +52,8 @@ if ( 'seed' === $mode ) {
         is_array( $row ) && 234567 === (int) $row['original_size'] && 123456 === (int) $row['webp_size'],
         'published 1.1.0 conversion record survives schema upgrade'
     );
-    firexcore_upgrade_assert( '1.2.0' === get_option( 'firexcore_webp_schema_version' ), 'new schema version registered' );
-    WP_CLI::success( 'Real 1.1.0 to 1.2.0 persisted-state upgrade passed' );
+    firexcore_upgrade_assert( '1.2.1' === get_option( 'firexcore_webp_schema_version' ), 'new schema version registered' );
+    WP_CLI::success( 'Real 1.1.0 to 1.2.1 persisted-state upgrade passed' );
 } else {
     WP_CLI::error( 'Expected seed or verify' );
 }
