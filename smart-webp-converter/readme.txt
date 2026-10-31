@@ -4,7 +4,7 @@ Tags: webp, images, performance, optimization, media
 Requires at least: 5.8
 Requires PHP: 7.4
 Tested up to: 7.1
-Stable tag: 1.2.0
+Stable tag: 1.2.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -29,7 +29,7 @@ Other features:
 
 Limitations and safeguards:
 * New uploads are processed automatically. In Media Library, view WebP status and regenerate a missing sidecar for an existing image without replacing its original; no automatic bulk pass is run.
-* A source PNG/JPEG remains PNG/JPEG in Media Library while Replace Original is OFF. The additional WebP file is reported separately.
+* A source PNG/JPEG remains PNG/JPEG in Media Library while Replace Original is OFF; a separate WebP file is generated where server support permits. The additional WebP file is reported separately.
 * Site icons (including apple-touch-icon PNG), CSS backgrounds and raw URLs are not automatically rewritten.
 * Animated GIFs are skipped to preserve animation. GIFs require Imagick even when single-frame.
 * Large images above 40 million pixels are skipped.
@@ -38,7 +38,7 @@ Limitations and safeguards:
 * Legacy images from older releases (including webp-temp files) are not deleted or migrated automatically.
 * Lossless requires Imagick; when unavailable, lossless requests are skipped rather than silently using lossy conversion.
 * Requires PHP 7.4+ (version 1.1.0 required PHP 7.2+). Hosts on PHP 7.2/7.3 must upgrade PHP before installing this update.
-* Test replacement on staging with a backup first. It changes new upload filenames and MIME types.
+* Enabling destructive replacement requires a separate deletion-confirmation checkbox at settings save time. Test replacement on staging with a backup first. It changes new upload filenames and MIME types and permanently removes the original for new uploads. Existing images removed by an earlier release can only be restored from an external backup.
 * Smoke integration has passed on WordPress 6.7.10 and 7.1.4. WooCommerce, multisite and CDN variants still require testing.
 
 == Installation ==
@@ -51,15 +51,24 @@ Limitations and safeguards:
 
 == Screenshots ==
 
-1. Smart WebP Converter settings: safe mode preserves the original PNG/JPEG and makes WebP files alongside it.
-2. WordPress Media Library attachment details: the PNG remains unchanged in safe mode. Use the conversion status link to verify the separate WebP file.
+1. Actual Smart WebP Converter settings screen on a disposable WordPress install: protected replacement and visible settings.
+2. Actual Smart WebP Converter dashboard on a disposable WordPress install: real statistics and media conversion statuses.
 
 == Upgrade Notice ==
+
+= 1.2.1 =
+Safe by default. Enabling destructive replacement now requires an additional confirmation. New dashboard presents real media and conversion status.
 
 = 1.2.0 =
 Requires PHP 7.4+. Preserves existing options, media and statistics. No legacy webp-temp deletion or bulk migration. Retired dashboard charts/suggestions and ineffective cache hooks have been removed.
 
 == Changelog ==
+
+= 1.2.1 =
+* Add polished, responsive WordPress admin settings and dashboard with real statistics and attachment statuses.
+* Add an explicit, separate confirmation to enable destructive original replacement; disabling is always available.
+* Generate authentic release screenshots in disposable WordPress CI, and include branded banner/icon assets.
+* Retain PNG/JPEG filenames in Media Library when the non-destructive sidecar mode is active.
 
 = 1.2.0 =
 * Convert before media registration when original replacement is enabled.
