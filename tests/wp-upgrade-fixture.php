@@ -3,7 +3,7 @@
  * Validate persistent upgrade data against the published WordPress.org 1.1.0.
  * Run in an isolated WP-CLI WordPress fixture:
  * wp eval-file tests/wp-upgrade-fixture.php seed
- * ... replace activated plugin files with 1.2.0 ...
+ * ... replace activated plugin files with 1.2.1 ...
  * wp eval-file tests/wp-upgrade-fixture.php verify
  */
 if ( ! defined( 'ABSPATH' ) || ! defined( 'WP_CLI' ) || ! WP_CLI ) {
