@@ -2,8 +2,8 @@
 /**
  * Plugin Name: Smart WebP Converter
  * Plugin URI: https://github.com/FireXCore/Smart-Webp-Converter
- * Description: Converts new image uploads to WebP, with optional safe original replacement, WebP sidecars, and conversion statistics.
- * Version: 1.2.0
+ * Description: Converts uploads to WebP with non-destructive sidecars by default, optional destructive replacement, and verified media statistics.
+ * Version: 1.2.1
  * Requires at least: 5.8
  * Requires PHP: 7.4
  * Author: FireXCore
@@ -16,7 +16,7 @@
 defined( 'ABSPATH' ) || exit;
 
 final class FireXCore_WebP_Converter {
-    const VERSION = '1.2.0';
+    const VERSION = '1.2.1';
     const TABLE = 'webp_conversion_stats';
 
     /** @var array<string, int> Original bytes keyed by new WebP upload path. */
@@ -27,6 +27,7 @@ final class FireXCore_WebP_Converter {
         add_action( 'init', array( $this, 'maybe_upgrade' ) );
         add_action( 'admin_init', array( $this, 'register_settings' ) );
         add_action( 'admin_menu', array( $this, 'admin_menu' ) );
+        add_action( 'admin_enqueue_scripts', array( $this, 'admin_assets' ) );
         add_action( 'admin_notices', array( $this, 'admin_notices' ) );
         add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), array( $this, 'settings_link' ) );
         add_filter( 'wp_handle_upload', array( $this, 'handle_upload' ), 20, 2 );
@@ -535,7 +536,11 @@ final class FireXCore_WebP_Converter {
             'type' => 'integer', 'sanitize_callback' => array( $this, 'sanitize_quality' ),
             'default' => 80,
         ) );
-        foreach ( array( 'replace_original', 'strip_metadata', 'lossless', 'lazy_loading', 'seo_optimization' ) as $key ) {
+        register_setting( 'firexcore_webp_options', 'firexcore_webp_replace_original', array(
+            'type' => 'boolean', 'sanitize_callback' => array( $this, 'sanitize_destructive_mode' ),
+            'default' => false,
+        ) );
+        foreach ( array( 'strip_metadata', 'lossless', 'lazy_loading', 'seo_optimization' ) as $key ) {
             register_setting( 'firexcore_webp_options', 'firexcore_webp_' . $key, array(
                 'type' => 'boolean', 'sanitize_callback' => array( $this, 'sanitize_bool' ),
             ) );
@@ -548,6 +553,35 @@ final class FireXCore_WebP_Converter {
 
     public function sanitize_bool( $value ) {
         return filter_var( $value, FILTER_VALIDATE_BOOLEAN );
+    }
+
+    /**
+     * A separate confirmation is required on every save that enables deletion.
+     * Prevents accidental activation by the normal settings checkbox alone.
+     */
+    public function sanitize_destructive_mode( $value ) {
+        if ( ! $this->sanitize_bool( $value ) ) {
+            return false;
+        }
+        $confirmed = isset( $_POST['firexcore_webp_confirm_delete'] ) &&
+            '1' === sanitize_text_field( wp_unslash( $_POST['firexcore_webp_confirm_delete'] ) );
+        if ( ! $confirmed ) {
+            add_settings_error( 'firexcore_webp_replace_original', 'confirmation_required',
+                __( 'Destructive replacement was NOT enabled. Check the separate deletion-confirmation box to enable it.', 'smart-webp-converter' ), 'error' );
+            return false;
+        }
+        return true;
+    }
+
+    public function admin_assets( $hook_suffix ) {
+        if ( false === strpos( (string) $hook_suffix, 'smart-webp-converter' ) ) {
+            return;
+        }
+        wp_enqueue_style(
+            'firexcore-webp-admin',
+            plugins_url( 'assets/admin.css', __FILE__ ),
+            array(), self::VERSION
+        );
     }
 
     public function admin_menu() {
@@ -593,28 +627,82 @@ final class FireXCore_WebP_Converter {
         return $row ? $row : array( 'converted' => 0, 'original_bytes' => 0, 'webp_bytes' => 0 );
     }
 
+    private function stat_cards( $totals ) {
+        $original = (int) $totals['original_bytes'];
+        $webp = (int) $totals['webp_bytes'];
+        $saved = max( 0, $original - $webp );
+        $cards = array(
+            array( __( 'Converted attachments', 'smart-webp-converter' ), number_format_i18n( (int) $totals['converted'] ), 'dashicons-images-alt2' ),
+            array( __( 'Original total', 'smart-webp-converter' ), size_format( $original ), 'dashicons-format-image' ),
+            array( __( 'WebP total', 'smart-webp-converter' ), size_format( $webp ), 'dashicons-format-gallery' ),
+            array( __( 'Potential bandwidth saving', 'smart-webp-converter' ), size_format( $saved ), 'dashicons-performance' ),
+        );
+        echo '<div class="swc-stats">';
+        foreach ( $cards as $card ) {
+            echo '<section class="swc-stat"><span class="dashicons ' . esc_attr( $card[2] ) . '" aria-hidden="true"></span>';
+            echo '<span class="swc-stat-number">' . esc_html( $card[1] ) . '</span><span class="swc-stat-label">' . esc_html( $card[0] ) . '</span></section>';
+        }
+        echo '</div>';
+    }
+
+    private function admin_intro( $heading ) {
+        echo '<div class="swc-header"><span class="swc-logo dashicons dashicons-format-gallery" aria-hidden="true"></span><div>';
+        echo '<h1>' . esc_html( $heading ) . '</h1><p>' .
+            esc_html__( 'Real WebP conversions, clear status, and a safe default that retains original images.', 'smart-webp-converter' ) .
+            '</p></div></div>';
+        echo '<div class="swc-notice swc-notice-info"><span class="dashicons dashicons-info" aria-hidden="true"></span><div><strong>' .
+            esc_html__( 'Safe mode preserves the original JPG / PNG.', 'smart-webp-converter' ) .
+            '</strong><p>' . esc_html__( 'The media item stays PNG/JPG; a separate .webp file is created and served when compatible. Existing file URLs, site icons and CSS backgrounds are not rewritten.', 'smart-webp-converter' ) . '</p></div></div>';
+        echo '<div class="swc-notice swc-notice-warning"><span class="dashicons dashicons-warning" aria-hidden="true"></span><div><strong>' .
+            esc_html__( 'Replace Original permanently removes new uploaded source files.', 'smart-webp-converter' ) .
+            '</strong><p>' . esc_html__( 'Keep the option off unless you have a verified backup and explicitly confirm deletion. Files previously deleted cannot be recreated from this plugin.', 'smart-webp-converter' ) . '</p></div></div>';
+    }
+
     public function dashboard() {
         if ( ! current_user_can( 'manage_options' ) ) {
             return;
         }
         $totals = $this->totals();
-        $original = (int) $totals['original_bytes'];
-        $webp = (int) $totals['webp_bytes'];
-        $potential = max( 0, $original - $webp );
-        $ratio = $original > 0 ? min( 100, round( 100 * $webp / $original ) ) : 0;
-        echo '<div class="wrap"><h1>' . esc_html__( 'Smart WebP Converter', 'smart-webp-converter' ) . '</h1>';
-        echo '<p>' . esc_html__( 'Statistics show potential transfer savings, not actual disk savings when originals are kept.', 'smart-webp-converter' ) . '</p>';
+        echo '<div class="wrap swc-admin">';
+        $this->admin_intro( __( 'Smart WebP Converter', 'smart-webp-converter' ) );
+        $this->stat_cards( $totals );
+        echo '<div class="swc-layout"><section class="swc-panel"><h2><span class="dashicons dashicons-admin-media" aria-hidden="true"></span> ' .
+            esc_html__( 'Media conversion status', 'smart-webp-converter' ) . '</h2>';
         $attachment_id = isset( $_GET['attachment_id'] ) ? absint( wp_unslash( $_GET['attachment_id'] ) ) : 0;
         if ( $attachment_id ) {
             $this->dashboard_attachment( $attachment_id );
+        } else {
+            echo '<p>' . esc_html__( 'Most recent image attachments. Values are calculated from actual files, never simulated.', 'smart-webp-converter' ) . '</p>';
+            $attachments = get_posts( array(
+                'post_type' => 'attachment', 'post_status' => 'inherit', 'post_mime_type' => 'image',
+                'posts_per_page' => 6, 'orderby' => 'date', 'order' => 'DESC', 'fields' => 'ids',
+            ) );
+            if ( empty( $attachments ) ) {
+                echo '<p>' . esc_html__( 'No uploaded images yet.', 'smart-webp-converter' ) . '</p>';
+            } else {
+                echo '<ul class="swc-media-list">';
+                foreach ( $attachments as $id ) {
+                    $status = $this->conversion_status( $id );
+                    $url = add_query_arg( array( 'page' => 'smart-webp-converter', 'attachment_id' => $id ), admin_url( 'admin.php' ) );
+                    echo '<li><a href="' . esc_url( $url ) . '">' . esc_html( get_the_title( $id ) ) .
+                        '</a><span class="swc-status swc-status-' . esc_attr( $status['state'] ) . '">' .
+                        esc_html( $status['label'] ) . '</span></li>';
+                }
+                echo '</ul>';
+            }
         }
-        echo '<div class="card" style="max-width:800px"><h2>' . esc_html__( 'Conversion statistics', 'smart-webp-converter' ) . '</h2>';
-        echo '<p>' . esc_html__( 'Converted attachments', 'smart-webp-converter' ) . ': <strong>' . esc_html( $totals['converted'] ) . '</strong></p>';
-        echo '<p>' . esc_html__( 'Original bytes', 'smart-webp-converter' ) . ': ' . esc_html( size_format( $original ) ) . '</p>';
-        echo '<p>' . esc_html__( 'WebP bytes', 'smart-webp-converter' ) . ': ' . esc_html( size_format( $webp ) ) . '</p>';
-        echo '<p>' . esc_html__( 'Potential transfer reduction', 'smart-webp-converter' ) . ': ' . esc_html( size_format( $potential ) ) . '</p>';
-        echo '<div role="img" aria-label="' . esc_attr__( 'WebP size as percentage of original size', 'smart-webp-converter' ) . '" style="height:18px;background:#dcdcde;border-radius:5px;overflow:hidden"><div style="height:100%;background:#2271b1;width:' . esc_attr( $ratio ) . '%"></div></div>';
-        echo '</div></div>';
+        echo '</section><aside class="swc-panel"><h2><span class="dashicons dashicons-lightbulb" aria-hidden="true"></span> ' .
+            esc_html__( 'How conversion works', 'smart-webp-converter' ) . '</h2><ol class="swc-how"><li>' .
+            esc_html__( 'Upload a JPG or PNG.', 'smart-webp-converter' ) . '</li><li>' .
+            esc_html__( 'The plugin generates a separate WebP file.', 'smart-webp-converter' ) . '</li><li>' .
+            esc_html__( 'The original stays intact unless destructive replacement is explicitly enabled.', 'smart-webp-converter' ) . '</li><li>' .
+            esc_html__( 'Supported image markup uses WebP with original fallback.', 'smart-webp-converter' ) .
+            '</li></ol><p><a class="button button-primary" href="' .
+            esc_url( admin_url( 'admin.php?page=smart-webp-converter-settings' ) ) . '">' .
+            esc_html__( 'Open settings', 'smart-webp-converter' ) . '</a></p></aside></div>';
+        echo '<p class="description">' .
+            esc_html__( 'Statistics estimate potential transfer savings, not disk savings when originals remain.', 'smart-webp-converter' ) . '</p>';
+        echo '</div>';
     }
 
     public function settings_page() {
@@ -622,33 +710,56 @@ final class FireXCore_WebP_Converter {
             return;
         }
         $options = array(
-            'replace_original' => __( 'Replace original on new uploads (destructive)', 'smart-webp-converter' ),
-            'strip_metadata' => __( 'Remove EXIF, IPTC and XMP (keep color profiles)', 'smart-webp-converter' ),
-            'lossless' => __( 'True lossless (requires Imagick with WebP support)', 'smart-webp-converter' ),
-            'lazy_loading' => __( 'Add lazy loading when WordPress has not set it', 'smart-webp-converter' ),
-            'seo_optimization' => __( 'Use meaningful attachment titles for empty alt text', 'smart-webp-converter' ),
+            'strip_metadata' => array( __( 'Remove EXIF, IPTC and XMP', 'smart-webp-converter' ), __( 'Remove location/camera metadata while keeping embedded color profiles where supported.', 'smart-webp-converter' ) ),
+            'lossless' => array( __( 'True lossless (Imagick required)', 'smart-webp-converter' ), __( 'Use lossless WebP only when ImageMagick supports it.', 'smart-webp-converter' ) ),
+            'lazy_loading' => array( __( 'Lazy loading', 'smart-webp-converter' ), __( 'Respect WordPress fetch priority and existing loading attributes.', 'smart-webp-converter' ) ),
+            'seo_optimization' => array( __( 'Fill empty alt text from meaningful title', 'smart-webp-converter' ), __( 'Existing alternative text is never overwritten.', 'smart-webp-converter' ) ),
         );
-        echo '<div class="wrap"><h1>' . esc_html__( 'Smart WebP Converter Settings', 'smart-webp-converter' ) . '</h1>';
-        echo '<p>' . esc_html__( 'With Replace Original disabled, the media library keeps your PNG/JPEG and the plugin creates a separate .webp file. WordPress image elements may serve WebP with an original fallback. Site icons, direct file URLs and CSS background images are not rewritten.', 'smart-webp-converter' ) . '</p>';
-        echo '<p>' . esc_html__( 'Replace Original applies only to new uploads, removes the source file after conversion, and must be tested with a backup first. To check a previously uploaded image, use its WebP conversion link in Media Library.', 'smart-webp-converter' ) . '</p>';
-        echo '<form action="options.php" method="post">';
+        echo '<div class="wrap swc-admin">';
+        $this->admin_intro( __( 'Smart WebP Converter Settings', 'smart-webp-converter' ) );
+        settings_errors();
+        echo '<div class="swc-layout"><section class="swc-panel swc-settings"><h2><span class="dashicons dashicons-admin-generic" aria-hidden="true"></span> ' .
+            esc_html__( 'Conversion settings', 'smart-webp-converter' ) . '</h2>';
+        echo '<form method="post" action="' . esc_url( admin_url( 'options.php' ) ) . '">';
         settings_fields( 'firexcore_webp_options' );
-        echo '<table class="form-table"><tr><th><label for="swc-quality">' .
-            esc_html__( 'WebP quality', 'smart-webp-converter' ) .
-            '</label></th><td><input id="swc-quality" type="number" min="1" max="100" name="firexcore_webp_quality" value="' .
-            esc_attr( $this->setting( 'quality', 80 ) ) . '"></td></tr>';
-        foreach ( $options as $key => $label ) {
+        echo '<div class="swc-option"><label for="swc-quality"><strong>' . esc_html__( 'WebP quality', 'smart-webp-converter' ) .
+            '</strong></label><div><input id="swc-quality" type="number" min="1" max="100" name="firexcore_webp_quality" value="' .
+            esc_attr( $this->setting( 'quality', 80 ) ) . '"><p class="description">' .
+            esc_html__( '1–100; higher values typically produce larger files.', 'smart-webp-converter' ) . '</p></div></div>';
+        $enabled = (bool) $this->setting( 'replace_original', false );
+        echo '<div class="swc-option swc-destructive"><label for="swc-replace"><strong>' .
+            esc_html__( 'Replace original on new uploads', 'smart-webp-converter' ) .
+            '</strong></label><div><input type="hidden" name="firexcore_webp_replace_original" value="0">' .
+            '<label class="swc-toggle"><input id="swc-replace" type="checkbox" name="firexcore_webp_replace_original" value="1" ' .
+            checked( $enabled, true, false ) . '><span>' . esc_html__( 'Enable destructive replacement', 'smart-webp-converter' ) .
+            '</span></label><p class="description">' .
+            esc_html__( 'Deletes the original for future uploads only. Existing originals are not retroactively deleted.', 'smart-webp-converter' ) .
+            '</p><label class="swc-confirm"><input type="checkbox" name="firexcore_webp_confirm_delete" value="1"> ' .
+            esc_html__( 'I understand that enabling this option permanently deletes newly uploaded source files after successful conversion.', 'smart-webp-converter' ) .
+            '</label></div></div>';
+        foreach ( $options as $key => $details ) {
             $name = 'firexcore_webp_' . $key;
             $default = in_array( $key, array( 'strip_metadata', 'lazy_loading', 'seo_optimization' ), true );
-            echo '<tr><th scope="row">' . esc_html( $label ) . '</th><td><label>';
-            echo '<input type="hidden" name="' . esc_attr( $name ) . '" value="0">';
-            echo '<input type="checkbox" name="' . esc_attr( $name ) . '" value="1" ' .
-                checked( $this->setting( $key, $default ), true, false ) . '> ' .
-                esc_html__( 'Enabled', 'smart-webp-converter' ) . '</label></td></tr>';
+            echo '<div class="swc-option"><label for="swc-' . esc_attr( $key ) . '"><strong>' . esc_html( $details[0] ) .
+                '</strong></label><div><input type="hidden" name="' . esc_attr( $name ) . '" value="0">' .
+                '<label class="swc-toggle"><input id="swc-' . esc_attr( $key ) . '" type="checkbox" name="' .
+                esc_attr( $name ) . '" value="1" ' . checked( $this->setting( $key, $default ), true, false ) .
+                '><span>' . esc_html__( 'Enabled', 'smart-webp-converter' ) . '</span></label><p class="description">' .
+                esc_html( $details[1] ) . '</p></div></div>';
         }
-        echo '</table>';
-        submit_button();
-        echo '</form></div>';
+        submit_button( __( 'Save settings', 'smart-webp-converter' ) );
+        echo '</form></section><aside class="swc-panel swc-aside"><h2><span class="dashicons dashicons-yes-alt" aria-hidden="true"></span> ' .
+            esc_html__( 'Media conversion status', 'smart-webp-converter' ) . '</h2><p>' .
+            esc_html__( 'Inspect a specific uploaded image to verify its WebP sidecar and size. A PNG still appears as PNG in Media Library when safe mode is enabled.', 'smart-webp-converter' ) .
+            '</p><p><a class="button button-secondary" href="' .
+            esc_url( admin_url( 'admin.php?page=smart-webp-converter' ) ) . '">' .
+            esc_html__( 'View actual conversion results', 'smart-webp-converter' ) .
+            '</a></p><h3>' . esc_html__( 'What happens on upload?', 'smart-webp-converter' ) .
+            '</h3><ol class="swc-how"><li>' . esc_html__( 'The JPEG/PNG is uploaded.', 'smart-webp-converter' ) .
+            '</li><li>' . esc_html__( 'A WebP is generated if supported.', 'smart-webp-converter' ) .
+            '</li><li>' . esc_html__( 'With replacement disabled, both files remain.', 'smart-webp-converter' ) .
+            '</li><li>' . esc_html__( 'With replacement enabled, the source file is removed after conversion.', 'smart-webp-converter' ) .
+            '</li></ol></aside></div></div>';
     }
 }
 
