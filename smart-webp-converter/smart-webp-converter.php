@@ -1,12 +1,15 @@
 <?php
 /**
  * Plugin Name: Smart WebP Converter
+ * Plugin URI: https://github.com/FireXCore/Smart-Webp-Converter
  * Description: Converts new image uploads to WebP, with optional safe original replacement, WebP sidecars, and conversion statistics.
  * Version: 1.2.0
  * Requires at least: 5.8
  * Requires PHP: 7.4
  * Author: FireXCore
+ * Author URI: https://firexcore.com/
  * License: GPL-2.0-or-later
+ * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain: smart-webp-converter
  */
 
