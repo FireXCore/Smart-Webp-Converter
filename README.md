@@ -6,11 +6,11 @@ Official plugin page: https://wordpress.org/plugins/smart-webp-converter/
 
 The editable WordPress plugin source is in [smart-webp-converter/](smart-webp-converter/). The earlier repository contained only a binary ZIP; the new source directory is authoritative for upcoming releases.
 
-**Development version:** 1.2.0 (not yet published to WordPress.org).
+**Development version:** 1.2.1 (not yet published to WordPress.org).
 
 **Current WordPress.org version:** 1.1.0. Updating this GitHub repository does **not** publish an update to the WordPress.org plugin directory. A separately reviewed WordPress SVN tag/release is required.
 
-## What changed in 1.2.0
+## What changed in 1.2.1
 
 - Safe replacement before WordPress registers a new attachment, keeping media metadata and thumbnail generation consistent.
 - Default non-destructive mode retains originals and creates permanent WebP files beside original images and generated thumbnails.
@@ -31,7 +31,7 @@ CI checks PHP 7.4, 8.2, and 8.4. WordPress integration tests passed on 6.7.10 an
 ## Package locally
 
 ```sh
-zip -r smart-webp-converter-1.2.0.zip smart-webp-converter/
+zip -r smart-webp-converter-1.2.1.zip smart-webp-converter/
 ```
 
 ## Limitations
