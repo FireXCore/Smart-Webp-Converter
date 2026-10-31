@@ -620,10 +620,16 @@ final class FireXCore_WebP_Converter {
     private function totals() {
         global $wpdb;
         $table = $wpdb->prefix . self::TABLE;
+        // Only count existing, non-trashed Media Library attachments.
+        // Historical orphan statistics are retained for audit but not presented as live results.
         $row = $wpdb->get_row( "SELECT COUNT(*) AS converted,
-            COALESCE(SUM(original_size), 0) AS original_bytes,
-            COALESCE(SUM(webp_size), 0) AS webp_bytes
-            FROM $table WHERE id IN (SELECT MAX(id) FROM $table GROUP BY attachment_id)", ARRAY_A );
+            COALESCE(SUM(s.original_size), 0) AS original_bytes,
+            COALESCE(SUM(s.webp_size), 0) AS webp_bytes
+            FROM $table s
+            INNER JOIN (SELECT attachment_id, MAX(id) AS latest_id FROM $table GROUP BY attachment_id) recent
+                ON s.id = recent.latest_id
+            INNER JOIN {$wpdb->posts} p
+                ON p.ID = s.attachment_id AND p.post_type = 'attachment' AND p.post_status <> 'trash'", ARRAY_A );
         return $row ? $row : array( 'converted' => 0, 'original_bytes' => 0, 'webp_bytes' => 0 );
     }
 
@@ -672,7 +678,7 @@ final class FireXCore_WebP_Converter {
         if ( $attachment_id ) {
             $this->dashboard_attachment( $attachment_id );
         } else {
-            echo '<p>' . esc_html__( 'Most recent image attachments. Values are calculated from actual files, never simulated.', 'smart-webp-converter' ) . '</p>';
+            echo '<p>' . esc_html__( 'Most recent Media Library images. The totals exclude statistics for deleted media items.', 'smart-webp-converter' ) . '</p>';
             $attachments = get_posts( array(
                 'post_type' => 'attachment', 'post_status' => 'inherit', 'post_mime_type' => 'image',
                 'posts_per_page' => 6, 'orderby' => 'date', 'order' => 'DESC', 'fields' => 'ids',
