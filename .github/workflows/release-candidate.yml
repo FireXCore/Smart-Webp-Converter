@@ -33,22 +33,22 @@ jobs:
           php -l smart-webp-converter/smart-webp-converter.php
       - name: Build installable release-candidate asset
         run: |
-          zip -q -r smart-webp-converter-1.2.0-rc.1.zip smart-webp-converter
-          unzip -t smart-webp-converter-1.2.0-rc.1.zip
-          sha256sum smart-webp-converter-1.2.0-rc.1.zip > SHA256SUMS
+          zip -q -r smart-webp-converter-1.2.0-rc.2.zip smart-webp-converter
+          unzip -t smart-webp-converter-1.2.0-rc.2.zip
+          sha256sum smart-webp-converter-1.2.0-rc.2.zip > SHA256SUMS
       - name: Create prerelease once, only after green CI
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
           TESTED_SHA: ${{ github.event.workflow_run.head_sha }}
         run: |
-          if gh release view v1.2.0-rc.1 >/dev/null 2>&1; then
+          if gh release view v1.2.0-rc.2 >/dev/null 2>&1; then
             echo "The release candidate is already published; no changes made."
             exit 0
           fi
-          gh release create v1.2.0-rc.1 \
-            smart-webp-converter-1.2.0-rc.1.zip SHA256SUMS \
+          gh release create v1.2.0-rc.2 \
+            smart-webp-converter-1.2.0-rc.2.zip SHA256SUMS \
             --target "$TESTED_SHA" \
-            --title "Smart WebP Converter 1.2.0 — Release Candidate 1" \
+            --title "Smart WebP Converter 1.2.0 — Release Candidate 2" \
             --notes-file .github/RELEASE_CANDIDATE_NOTES.md \
             --prerelease --latest=false
