@@ -1,0 +1,59 @@
+name: Translation catalogs QA
+
+on:
+  push:
+    branches: [main, "i18n/**"]
+    paths:
+      - 'translations/**'
+      - 'smart-webp-converter/smart-webp-converter.php'
+      - '.github/workflows/translation-qa.yml'
+  pull_request:
+    paths:
+      - 'translations/**'
+      - 'smart-webp-converter/smart-webp-converter.php'
+      - '.github/workflows/translation-qa.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify catalog completeness against released PHP source
+        run: python3 translations/check_translations.py
+      - name: Install GNU gettext
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq gettext
+      - name: Compile and check Persian translation
+        run: |
+          set -euo pipefail
+          msgfmt --check --check-format -o smart-webp-converter-fa_IR.mo translations/smart-webp-converter-fa_IR.po
+          test -s smart-webp-converter-fa_IR.mo
+          python3 - <<'PY'
+          import gettext
+          with open('smart-webp-converter-fa_IR.mo', 'rb') as f:
+              tr = gettext.GNUTranslations(f)
+          message = tr.gettext('Replace Original permanently removes new uploaded source files.')
+          assert message != 'Replace Original permanently removes new uploaded source files.'
+          assert 'اصلی' in message
+          print('PASS: compiled Persian MO resolves destructive replacement warning')
+          PY
+      - name: Package import and offline review files
+        run: |
+          set -euo pipefail
+          mkdir -p output
+          cp translations/smart-webp-converter.pot output/
+          cp translations/smart-webp-converter-fa_IR.po output/
+          cp smart-webp-converter-fa_IR.mo output/
+          cp translations/readme-fa_IR.md output/
+          cp translations/README.md output/
+          (cd output && zip -q -r ../smart-webp-converter-fa_IR-translations.zip .)
+          unzip -t smart-webp-converter-fa_IR-translations.zip
+          sha256sum smart-webp-converter-fa_IR-translations.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: smart-webp-converter-fa_IR-translation-package
+          path: smart-webp-converter-fa_IR-translations.zip
+          if-no-files-found: error

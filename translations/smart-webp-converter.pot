@@ -1,0 +1,268 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: Smart WebP Converter 1.2.1\n"
+"Report-Msgid-Bugs-To: https://github.com/FireXCore/Smart-Webp-Converter/issues\n"
+"POT-Creation-Date: 2026-11-01 00:00+0000\n"
+"PO-Revision-Date: 2026-11-01 00:00+0000\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: FireXCore extraction\n"
+"Language: \n"
+"Language-Team: \n"
+"
+#: smart-webp-converter.php:4071
+msgid "WebP original"
+msgstr ""
+
+#: smart-webp-converter.php:4101
+msgid "Not a supported source image"
+msgstr ""
+
+#: smart-webp-converter.php:4141
+msgid "Original file unavailable"
+msgstr ""
+
+#: smart-webp-converter.php:4241
+msgid "WebP sidecar ready; original retained"
+msgstr ""
+
+#: smart-webp-converter.php:4291
+msgid "No WebP sidecar detected"
+msgstr ""
+
+#: smart-webp-converter.php:4431
+msgid "View WebP file"
+msgstr ""
+
+#: smart-webp-converter.php:4501
+msgid "Manage conversion"
+msgstr ""
+
+#: smart-webp-converter.php:4531
+msgid "WebP conversion"
+msgstr ""
+
+#: smart-webp-converter.php:4561
+msgid "In safe mode the Media Library keeps the original PNG/JPEG file; the WebP is separate. Favicons and raw URLs are not automatically rewritten."
+msgstr ""
+
+#: smart-webp-converter.php:4621
+msgid "WebP status"
+msgstr ""
+
+#: smart-webp-converter.php:4801
+msgid "Insufficient permissions."
+msgstr ""
+
+#: smart-webp-converter.php:4871
+msgid "Invalid media attachment."
+msgstr ""
+
+#: smart-webp-converter.php:5101 smart-webp-converter.php:6751 smart-webp-converter.php:7571
+msgid "Media conversion status"
+msgstr ""
+
+#: smart-webp-converter.php:5151
+msgid "View generated WebP"
+msgstr ""
+
+#: smart-webp-converter.php:5201
+msgid "Conversion was not completed. Check server WebP support, image size, or file-name conflicts. The original remains unchanged."
+msgstr ""
+
+#: smart-webp-converter.php:5271
+msgid "Generate WebP sidecar now (keep original)"
+msgstr ""
+
+#: smart-webp-converter.php:5691
+msgid "Destructive replacement was NOT enabled. Check the separate deletion-confirmation box to enable it."
+msgstr ""
+
+#: smart-webp-converter.php:5871 smart-webp-converter.php:5881 smart-webp-converter.php:6721
+msgid "Smart WebP Converter"
+msgstr ""
+
+#: smart-webp-converter.php:5921 smart-webp-converter.php:5981
+msgid "Settings"
+msgstr ""
+
+#: smart-webp-converter.php:6091
+msgid "Smart WebP Converter: no WebP-capable image editor is available. Images will be left unchanged."
+msgstr ""
+
+#: smart-webp-converter.php:6141
+msgid "True lossless WebP requires ImageMagick WebP support. Conversion will be skipped until available."
+msgstr ""
+
+#: smart-webp-converter.php:6401
+msgid "Converted attachments"
+msgstr ""
+
+#: smart-webp-converter.php:6411
+msgid "Original total"
+msgstr ""
+
+#: smart-webp-converter.php:6421
+msgid "WebP total"
+msgstr ""
+
+#: smart-webp-converter.php:6431
+msgid "Potential bandwidth saving"
+msgstr ""
+
+#: smart-webp-converter.php:6561
+msgid "Real WebP conversions, clear status, and a safe default that retains original images."
+msgstr ""
+
+#: smart-webp-converter.php:6591
+msgid "Safe mode preserves the original JPG / PNG."
+msgstr ""
+
+#: smart-webp-converter.php:6601
+msgid "The media item stays PNG/JPG; a separate .webp file is created and served when compatible. Existing file URLs, site icons and CSS backgrounds are not rewritten."
+msgstr ""
+
+#: smart-webp-converter.php:6621
+msgid "Replace Original permanently removes new uploaded source files."
+msgstr ""
+
+#: smart-webp-converter.php:6631
+msgid "Keep the option off unless you have a verified backup and explicitly confirm deletion. Files previously deleted cannot be recreated from this plugin."
+msgstr ""
+
+#: smart-webp-converter.php:6801
+msgid "Most recent Media Library images. The totals exclude statistics for deleted media items."
+msgstr ""
+
+#: smart-webp-converter.php:6861
+msgid "No uploaded images yet."
+msgstr ""
+
+#: smart-webp-converter.php:7001
+msgid "How conversion works"
+msgstr ""
+
+#: smart-webp-converter.php:7011
+msgid "Upload a JPG or PNG."
+msgstr ""
+
+#: smart-webp-converter.php:7021
+msgid "The plugin generates a separate WebP file."
+msgstr ""
+
+#: smart-webp-converter.php:7031
+msgid "The original stays intact unless destructive replacement is explicitly enabled."
+msgstr ""
+
+#: smart-webp-converter.php:7041
+msgid "Supported image markup uses WebP with original fallback."
+msgstr ""
+
+#: smart-webp-converter.php:7071
+msgid "Open settings"
+msgstr ""
+
+#: smart-webp-converter.php:7091
+msgid "Statistics estimate potential transfer savings, not disk savings when originals remain."
+msgstr ""
+
+#: smart-webp-converter.php:7181
+msgid "Remove EXIF, IPTC and XMP"
+msgstr ""
+
+#: smart-webp-converter.php:7181
+msgid "Remove location/camera metadata while keeping embedded color profiles where supported."
+msgstr ""
+
+#: smart-webp-converter.php:7191
+msgid "True lossless (Imagick required)"
+msgstr ""
+
+#: smart-webp-converter.php:7191
+msgid "Use lossless WebP only when ImageMagick supports it."
+msgstr ""
+
+#: smart-webp-converter.php:7201
+msgid "Lazy loading"
+msgstr ""
+
+#: smart-webp-converter.php:7201
+msgid "Respect WordPress fetch priority and existing loading attributes."
+msgstr ""
+
+#: smart-webp-converter.php:7211
+msgid "Fill empty alt text from meaningful title"
+msgstr ""
+
+#: smart-webp-converter.php:7211
+msgid "Existing alternative text is never overwritten."
+msgstr ""
+
+#: smart-webp-converter.php:7241
+msgid "Smart WebP Converter Settings"
+msgstr ""
+
+#: smart-webp-converter.php:7271
+msgid "Conversion settings"
+msgstr ""
+
+#: smart-webp-converter.php:7301
+msgid "WebP quality"
+msgstr ""
+
+#: smart-webp-converter.php:7331
+msgid "1–100; higher values typically produce larger files."
+msgstr ""
+
+#: smart-webp-converter.php:7361
+msgid "Replace original on new uploads"
+msgstr ""
+
+#: smart-webp-converter.php:7391
+msgid "Enable destructive replacement"
+msgstr ""
+
+#: smart-webp-converter.php:7411
+msgid "Deletes the original for future uploads only. Existing originals are not retroactively deleted."
+msgstr ""
+
+#: smart-webp-converter.php:7431
+msgid "I understand that enabling this option permanently deletes newly uploaded source files after successful conversion."
+msgstr ""
+
+#: smart-webp-converter.php:7521
+msgid "Enabled"
+msgstr ""
+
+#: smart-webp-converter.php:7551
+msgid "Save settings"
+msgstr ""
+
+#: smart-webp-converter.php:7581
+msgid "Inspect a specific uploaded image to verify its WebP sidecar and size. A PNG still appears as PNG in Media Library when safe mode is enabled."
+msgstr ""
+
+#: smart-webp-converter.php:7611
+msgid "View actual conversion results"
+msgstr ""
+
+#: smart-webp-converter.php:7621
+msgid "What happens on upload?"
+msgstr ""
+
+#: smart-webp-converter.php:7631
+msgid "The JPEG/PNG is uploaded."
+msgstr ""
+
+#: smart-webp-converter.php:7641
+msgid "A WebP is generated if supported."
+msgstr ""
+
+#: smart-webp-converter.php:7651
+msgid "With replacement disabled, both files remain."
+msgstr ""
+
+#: smart-webp-converter.php:7661
+msgid "With replacement enabled, the source file is removed after conversion."
+msgstr ""
