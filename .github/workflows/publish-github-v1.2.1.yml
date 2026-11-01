@@ -1,0 +1,82 @@
+name: Publish verified GitHub v1.2.1 stable release
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/publish-github-v1.2.1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: publish-stable-v1.2.1
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout release instructions and source history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Validate official WordPress.org archive against tested Git commit
+        env:
+          RELEASE_SHA: f7d233403b6fbd35d67fcb2b977ab4c379d1b53c
+          RELEASE_VERSION: 1.2.1
+        shell: bash
+        run: |
+          set -euo pipefail
+          git cat-file -e "$RELEASE_SHA^{commit}"
+          curl -fL --retry 3 --retry-delay 3 --connect-timeout 20 --max-time 120 \
+            "https://downloads.wordpress.org/plugin/smart-webp-converter.${RELEASE_VERSION}.zip" \
+            -o "smart-webp-converter-${RELEASE_VERSION}.zip"
+          unzip -t "smart-webp-converter-${RELEASE_VERSION}.zip"
+          mkdir -p release-compare
+          for file in smart-webp-converter.php readme.txt assets/admin.css; do
+            git show "$RELEASE_SHA:smart-webp-converter/$file" > "release-compare/source-$(basename "$file")"
+            unzip -p "smart-webp-converter-${RELEASE_VERSION}.zip" "smart-webp-converter/$file" > "release-compare/distributed-$(basename "$file")"
+            cmp "release-compare/source-$(basename "$file")" "release-compare/distributed-$(basename "$file")"
+            echo "MATCH: $file against tested commit and official WordPress.org ZIP"
+          done
+          grep -Fq 'Version: 1.2.1' release-compare/distributed-smart-webp-converter.php
+          grep -Fq 'Stable tag: 1.2.1' release-compare/distributed-readme.txt
+          php -l release-compare/distributed-smart-webp-converter.php
+          sha256sum "smart-webp-converter-${RELEASE_VERSION}.zip" > SHA256SUMS
+          cat SHA256SUMS
+
+      - name: Confirm release tag is not already published
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if gh release view v1.2.1 >/dev/null 2>&1; then
+            echo "Stable GitHub Release v1.2.1 already exists. Refusing to overwrite it."
+            exit 1
+          fi
+          if git ls-remote --exit-code --tags origin refs/tags/v1.2.1 >/dev/null 2>&1; then
+            echo "Git tag v1.2.1 exists without a Release. Refusing to overwrite the tag."
+            exit 1
+          fi
+
+      - name: Publish official stable GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh release create v1.2.1 \
+            smart-webp-converter-1.2.1.zip SHA256SUMS \
+            --target f7d233403b6fbd35d67fcb2b977ab4c379d1b53c \
+            --title "Smart WebP Converter 1.2.1 — Stable" \
+            --notes-file docs/GITHUB_RELEASE_v1.2.1.md \
+            --latest
+          gh release view v1.2.1 --json url,isDraft,isPrerelease,tagName,assets \
+            --jq '{url:.url,tag:.tagName,draft:.isDraft,prerelease:.isPrerelease,assets:[.assets[].name]}'
