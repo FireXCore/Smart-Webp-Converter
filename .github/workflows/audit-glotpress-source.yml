@@ -1,0 +1,61 @@
+name: Audit public GlotPress current 68 originals
+
+on:
+  push:
+    branches: [audit/glotpress-68-source-20261101]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download public GlotPress untranslated and waiting originals
+        shell: bash
+        run: |
+          set -euo pipefail
+          base="https://translate.wordpress.org/projects/wp-plugins/smart-webp-converter/dev/fa/default/export-translations/"
+          mkdir -p gp-exports
+          for status in untranslated waiting; do
+            echo "=== $status ==="
+            curl --fail --silent --show-error --location --max-time 45 \
+              --get --data-urlencode "filters[status]=$status" --data-urlencode "format=po" \
+              "$base" -o "gp-exports/$status.po"
+            head -c 100 "gp-exports/$status.po"; echo
+          done
+      - name: Compare public source string catalog with local 64-source PO
+        run: |
+          python3 -m pip install --break-system-packages polib
+          python3 - <<'PY'
+          from pathlib import Path
+          import polib
+          from collections import Counter
+          local={x.msgid for x in polib.pofile("translations/smart-webp-converter-fa_IR.po") if x.msgid}
+          external=[]
+          for status in ("untranslated","waiting"):
+            p=Path(f"gp-exports/{status}.po")
+            if '<html' in p.read_text(errors='ignore')[:500].lower():
+              raise RuntimeError(f"Unexpected HTML response for {status}, not PO")
+            entries={x.msgid for x in polib.pofile(str(p)) if x.msgid}
+            print(f"GlotPress {status}: {len(entries)} originals")
+            external.extend(entries)
+          actual=set(external)
+          print(f"Local PO strings: {len(local)}; GlotPress union: {len(actual)}")
+          print("Extra on GlotPress:")
+          for s in sorted(actual-local): print("EXTRA:",repr(s))
+          print("Missing on GlotPress:")
+          for s in sorted(local-actual): print("MISSING:",repr(s))
+          Path("gp-exports/diff.txt").write_text(
+            "EXTRA ON GLOTPRESS\n"+"\n".join(sorted(actual-local))+
+            "\nMISSING ON GLOTPRESS\n"+"\n".join(sorted(local-actual))+"\n",
+            encoding="utf-8"
+          )
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: glotpress-source-comparison
+          path: gp-exports/
